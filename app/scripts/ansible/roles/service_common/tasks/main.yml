@@ -1,0 +1,130 @@
+---
+- name: Include Service-OS-specific variables.
+  include_vars: "{{ service }}-{{ ansible_os_family }}.yml"
+
+- name: "Ensure group {{ service_group }} exists"
+  ansible.builtin.group:
+    name: "{{ service_group }}"
+    state: present
+
+- name: Add {{ service_group }} User
+  ansible.builtin.user:
+    name: "{{ service_user }}"
+    group: "{{ service_group }}"
+
+- name: "check if {{ service_group }} is installed"
+  package_facts:
+    manager: "auto"
+
+- name: populate service facts
+  service_facts:
+
+- name: Creates directories
+  file:
+    path: "{{ item.path }}"
+    state: directory
+    mode: 0775
+    owner: "{{ service_user }}"
+    group: "{{ service_group }}"
+  with_items:
+    - { path: "{{ service_dir }}"}
+    - { path: "{{ service_dir }}/conf.d"}
+  when: service not in ansible_facts.packages
+
+- name: Creates directories for Apache
+  file:
+    path: "{{ item.path }}"
+    state: directory
+    mode: 0775
+    owner: "{{ service_user }}"
+    group: "{{ service_group }}"
+  with_items:
+    - { path: "{{ service_dir }}"}
+    - { path: "{{ service_dir }}/{{ conf_folder }}"}
+  when:
+    - service not in ansible_facts.packages
+    - service == "apache"
+
+- name: Install passlib
+  pip:
+    name: passlib
+    state: latest
+
+- name: Copying over nginx.conf
+  template: src={{item.src}} dest={{item.dest}} mode="0666" force="no"
+  with_items:
+    - { src: 'mime.types.j2', dest: '{{ service_dir }}/mime.types' }
+    - { src: 'nginx.conf.j2', dest: '{{CONFIG_PATH}}' }
+    - { src: '{{ service }}_default.conf.j2', dest: '{{ service_dir }}/conf.d/default.conf' }
+  become: true
+  ignore_errors: yes
+  when: service == "nginx"
+
+- name: Copy status page configuration in place
+  template:
+    src: "{{ service }}_status.conf.j2"
+    dest: "{{ service_dir }}/{{ conf_folder }}/status_page.conf"
+    mode: 0644
+    force: no
+  when:
+   - service not in ansible_facts.packages
+  ignore_errors: yes
+
+- name: Open stat port for firewalld
+  firewalld:
+    port: "{{ STAT_PORT }}/tcp"
+    state: enabled
+    permanent: yes
+    immediate: yes
+  ignore_errors: yes
+  no_log: True
+  debugger: never
+  when:
+    - '"firewalld" in ansible_facts.packages'
+    - ansible_facts['os_family'] == "RedHat" or ansible_facts['os_family'] == 'CentOS'
+    - ansible_facts.services["firewalld.service"]['state'] == "running"
+
+
+- name: Open stat port for iptables
+  iptables:
+    chain: INPUT
+    destination_port: "{{ STAT_PORT }}"
+    jump: ACCEPT
+    protocol: tcp
+  ignore_errors: yes
+
+
+- htpasswd:
+    path: "{{ service_dir }}/status_page_passwdfile"
+    name: "{{STATS_USER}}"
+    password: "{{STATS_PASS}}"
+
+- name: set correct permissions to passwd file
+  ansible.builtin.file:
+    path: "{{ service_dir }}/status_page_passwdfile"
+    mode: 0664
+
+- name: test to see if selinux is running
+  command: getenforce
+  register: sestatus
+  changed_when: false
+  when: ansible_facts['os_family'] == "RedHat" or ansible_facts['os_family'] == 'CentOS'
+
+
+- name: Disable SELINUX in config
+  template:
+    src: /var/www/haproxy-wi/app/scripts/ansible/roles/haproxy/templates/selinux.j2
+    dest: /etc/selinux/config
+  ignore_errors: yes
+  when:
+    - sestatus.stdout is defined
+    - '"Enforcing" in sestatus.stdout'
+
+
+- name: Disable SELINUX in env
+  shell: setenforce 0
+  ignore_errors: yes
+  debugger: never
+  when:
+    - sestatus.stdout is defined
+    - '"Enforcing" in sestatus.stdout'

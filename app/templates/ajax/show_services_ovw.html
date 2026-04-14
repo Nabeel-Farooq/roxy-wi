@@ -1,0 +1,191 @@
+{% import 'languages/'+lang|default('en')+'.html' as lang %}
+<tr class="odd">
+	<td class="padding10 first-collumn-wi">
+		{% if roxy_tools_status['roxy-wi-metrics'] in ('active', 'RUNNING') %}
+			<span class="serverUp server-status-small" title="Metrics master {{lang.words.started}}"></span>
+			{% if role <= 1 %}
+				<a href="{{ url_for('logs.logs_internal') }}" title="{{lang.words.view|title()}} {{lang.words.logs2}}" class="logs_link">
+					Metrics master
+				</a>
+			{% else %}
+				Metrics master
+			{% endif %}
+		{% else %}
+			{% if roxy_tools_status['roxy-wi-metrics'] in ('inactive', 'failed', 'ERROR') %}
+				<span class="serverDown server-status-small" title="Metrics {{lang.words.stopped}}"></span>
+				{% if role <= 1 %}
+				<a href="{{ url_for('admin.admin') }}#tools" title="{{lang.words.start|title()}} Metrics" class="logs_link">
+					Metrics master
+				</a>
+				{% else %}
+					Metrics master
+				{% endif %}
+			{% else %}
+				<span class="serverNone server-status-small" title="{{lang.phrases.metrics_not_installed}}"></span>
+				<a href="https://roxy-wi.org/tools/metrics#installation" title="Metrics installation" target="_blank" class="logs_link">
+					Metrics master
+				</a>
+			{% endif %}
+		{% endif %}
+	</td>
+	<td class="third-collumn-wi">
+		{% if roxy_tools_status['roxy-wi-checker'] in ('active', 'RUNNING') %}
+			<span class="serverUp server-status-small" title="Checker master {{lang.words.started}}"></span>
+			{% if role <= 1 %}
+			<a href="{{ url_for('logs.logs_internal') }}" title="{{lang.words.view|title()}} {{lang.words.logs2}}" class="logs_link">
+				Checker master
+			</a>
+			{% else %}
+				Checker master
+			{% endif %}
+		{% else %}
+			{% if roxy_tools_status['roxy-wi-checker'] in ('inactive', 'failed', 'ERROR') %}
+				<span class="serverDown server-status-small" title="Checker {{lang.words.stopped}}"></span>
+				{% if role <= 1 %}
+					<a href="{{ url_for('admin.admin') }}#services" title="{{lang.words.start|title()}} Checker" class="logs_link">
+						Checker master
+					</a>
+				{% else %}
+					Checker master
+				{% endif %}
+			{% else %}
+				<span class="serverNone server-status-small" title="{{lang.phrases.checker_not_installed}}"></span>
+				<a href="https://roxy-wi.org/tools/checker#installation" title="Checker installation" target="_blank" class="logs_link">
+					Checker master
+				</a>
+			{% endif %}
+		{% endif %}
+	</td>
+	<td class="third-collumn-wi">
+		{% if roxy_tools_status['roxy-wi-keep_alive'] in ('active', 'RUNNING') %}
+			<span class="serverUp server-status-small" title="Auto start {{lang.words.started}}"></span>
+			{% if role <= 1 %}
+				<a href="{{ url_for('logs.logs_internal') }}" title="{{lang.words.view|title()}} {{lang.words.logs2}}" class="logs_link">
+					Auto start
+				</a>
+			{% else %}
+				Auto star
+			{% endif %}
+		{% else %}
+			{% if roxy_tools_status['roxy-wi-keep_alive'] in ('inactive', 'failed', 'ERROR') %}
+				<span class="serverDown server-status-small" title="Auto start {{lang.words.stopped}}"></span>
+				{% if role <= 1 %}
+					<a href="{{ url_for('admin.admin') }}#services" title="{{lang.words.start|title()}} Auto star {{lang.words.service}}" class="logs_link">
+						Auto start
+					</a>
+				{% else %}
+					Auto start
+				{% endif %}
+			{% else %}
+				<span class="serverNone server-status-small" title="{{lang.phrases.auto_start_not_installed}}"></span>
+				<a href="https://roxy-wi.org/tools/auto_start#installation" title="Auto start installation" target="_blank" class="logs_link">
+					Auto start
+				</a>
+			{% endif %}
+		{% endif %}
+	</td>
+</tr>
+<tr class="even">
+	<td class="padding10 first-collumn-wi">
+	{% if metrics_worker|int() >= 1 %}
+		<span class="serverUp server-status-small" title="{{lang.words.running2|title()}} {{metrics_worker}} {{lang.words.worker2}} {{lang.words.processes}}"></span>
+	{% else %}
+		{% if is_metrics_worker|int() == 0 %}
+		<span class="serverNone server-status-small" title="There is not job for metrics"></span>
+		{% else %}
+		<span class="serverDown server-status-small" title="{{lang.words.running2|title()}} {{is_checker_worker}} {{lang.words.worker2}} {{lang.words.processes}}"></span>
+		{% endif %}
+	{% endif %}
+	{% if role <= 1 %}
+		<a href="{{ url_for('logs.logs_internal') }}" title="{{lang.words.view|title()}} {{lang.words.logs2}}" class="logs_link">
+			Metrics workers
+		</a>
+	{% else %}
+		Metrics workers
+	{% endif %}
+	</td>
+	<td>
+	{% if checker_worker|int() >= 1 %}
+		<span class="serverUp server-status-small" title="{{lang.words.running2|title()}} {{ checker_worker }} {{lang.words.worker2}} {{lang.words.processes}}"></span>
+	{% else %}
+		{% if is_checker_worker|int() == 0 %}
+		<span class="serverNone server-status-small" title="There is not job for checker"></span>
+		{% else %}
+		<span class="serverDown server-status-small" title="{{lang.words.running2|title()}} {{ checker_worker }} {{lang.words.worker2}} {{lang.words.processes}}"></span>
+		{% endif %}
+	{% endif %}
+	{% if role <= 1 %}
+		<a href="{{ url_for('logs.logs_internal') }}" title="{{lang.words.view|title()}} {{lang.words.logs2}}" class="logs_link">
+			Checker workers
+		</a>
+	{% else %}
+			Checker workers
+	{% endif %}
+	</td>
+	<td>
+		{% if roxy_tools_status['roxy-wi-smon'] in ('active', 'RUNNING') %}
+			<span class="serverUp server-status-small" title="SMON {{lang.words.started}}"></span>
+			<a href="{{ url_for('smon.smon_main_dashboard') }}" title="SMON Dashboard" class="logs_link">
+				SMON
+			</a>
+		{% else %}
+			{% if roxy_tools_status['roxy-wi-smon'] in ('inactive', 'failed', 'ERROR') %}
+				<span class="serverDown server-status-small" title="SMON {{lang.words.stopped}}"></span>
+				<a href="{{ url_for('admin.admin') }}#services" title="{{lang.words.start|title()}} SMON" class="logs_link">
+					SMON
+				</a>
+			{% else %}
+				<span title="SMON is not installed"><span class="serverNone server-status-small"></span></span>
+				<a href="https://roxy-wi.org/tools/smon" title="Simple monitoring ports installation" target="_blank" class="logs_link">
+					SMON
+				</a>
+			{% endif %}
+		{% endif %}
+	</td>
+</tr>
+<tr class="odd">
+	<td class="padding10 first-collumn-wi">
+		{% if roxy_tools_status['roxy-wi-socket'] in ('active', 'RUNNING') %}
+			<span class="serverUp server-status-small" title="Socket {{lang.words.started}}"></span>
+			{% if role <= 1 %}
+				<a href="{{ url_for('logs.logs_internal') }}" title="{{lang.words.view|title()}} {{lang.words.logs2}}" class="logs_link">
+					Socket service
+				</a>
+			{% else %}
+					Socket service
+			{% endif %}
+		{% else %}
+			{% if roxy_tools_status['roxy-wi-socket'] in ('inactive', 'failed', 'ERROR') %}
+				<span class="serverDown server-status-small" title="Socket {{lang.words.stopped}}"></span>
+				<a href="{{ url_for('admin.admin') }}#services" title="{{lang.words.start|title()}} Socket" class="logs_link">
+					Socket service
+				</a>
+			{% else %}
+				<span title="Socket service is not installed"><span class="serverNone server-status-small"></span></span>
+				<a href="https://roxy-wi.org/tools/socket" title="Socket service" target="_blank" class="logs_link">
+					Socket service
+				</a>
+			{% endif %}
+		{% endif %}
+	</td>
+	<td>
+	{% if roxy_tools_status['roxy-wi-portscanner'] in ('active', 'RUNNING') %}
+			<span class="serverUp server-status-small" title="Port scanner {{lang.words.started}}"></span>
+			<a href="{{ url_for('portscanner.portscanner') }}" title="Port scanner Dashboard" class="logs_link">
+				Port scanner
+			</a>
+		{% else %}
+			{% if roxy_tools_status['roxy-wi-portscanner'] in ('inactive', 'failed', 'ERROR') %}
+				<span class="serverDown server-status-small" title="Port scanner {{lang.words.stopped}}"></span>
+				<a href="{{ url_for('admin.admin') }}#services" title="{{lang.words.start|title()}} Port scanner" class="logs_link">
+					Port scanner
+				</a>
+			{% else %}
+				<span title="Port scanner is not installed"><span class="serverNone server-status-small"></span></span>
+				<a href="https://roxy-wi.org/tools/port_scanner" title="Port scanner" target="_blank" class="logs_link">
+					Port scanner
+				</a>
+			{% endif %}
+		{% endif %}
+	</td>
+</tr>

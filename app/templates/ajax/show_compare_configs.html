@@ -1,0 +1,24 @@
+{% from 'include/input_macros.html' import input %}
+{% import 'languages/'+lang|default('en')+'.html' as lang %}
+<form action="" method="post" class="left-space">
+	<div>
+		<h4>{{ lang.phrases.comparing_config }}</h4>
+		<p>
+			<select autofocus required name="left" id="left">
+				<option disabled selected>{{ lang.phrases.select_older_config }}</option>
+				{% for file in return_files %}
+					<option value="{{ file }}">{{ file.split('-', maxsplit=1)[1] }}</option>
+				{% endfor %}
+			</select>
+
+			<select autofocus required name="right" id="right">
+				<option disabled selected>{{ lang.phrases.select_newer_config }}</option>
+				{% for file in return_files %}				
+					<option value="{{ file }}">{{ file.split('-', maxsplit=1)[1] }}</option>
+				{% endfor %}
+			</select>
+			{{ input('serv', type='hidden', value=serv) }}
+			<a class="ui-button ui-widget ui-corner-all" id="show" title="{{ lang.words.compare|title() }}" onclick="showCompare()">{{ lang.words.compare|title() }}</a>
+		</p>
+	</div>
+</form>

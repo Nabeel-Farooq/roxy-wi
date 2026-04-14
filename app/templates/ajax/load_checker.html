@@ -1,0 +1,405 @@
+{% import 'languages/'+lang|default('en')+'.html' as lang %}
+{% from 'include/input_macros.html' import input, select, checkbox %}
+{% if user_subscription['user_status'] == 0 %}
+	{% include 'include/no_sub.html' %}
+{% else %}
+<script>
+    $( "#checker_tabs" ).tabs();
+</script>
+<style>
+    .checker_settings_table {
+        margin-bottom: 15px;
+    }
+</style>
+{% for s in services %}
+    {% if s.0 == 'roxy-wi-checker' %}
+        {% if s.3 == '* is not installed' and s.3 == '' %}
+            <div style="text-align: center;">
+                <br />
+                <h3>{{lang.phrases.checker_not_installed}}
+                    {{lang.words.read|title()}} <a href="https://roxy-wi.org/tools/checker#installation" title="Checker {{lang.words.installation}}" style="color: #5d9ceb;" target="_blank">{{lang.words.here}}</a>
+                    {{lang.phrases.how_to_install_checker}}</h3>
+            </div>
+            {% else %}
+    <div id="checker_settings">
+        <table class="overview-overflow checker_settings_table" id="checker_haproxy_table">
+            <caption><i class="fas fa-network-wired caption-icon"></i><h3>HAProxy {{lang.words.servers}}</h3></caption>
+            <tr class="overviewHead">
+                <td class="padding10 first-collumn">{{lang.words.server|title()}}</td>
+                <td class="first-collumn" title="{{lang.words.alert|title()}} {{lang.words.via}} Telegram" style="width: 10%;">Telegram</td>
+                <td class="first-collumn" title="{{lang.words.alert|title()}} {{lang.words.via}} Slack" style="width: 10%;">Slack</td>
+                <td class="first-collumn" title="{{lang.words.alert|title()}} {{lang.words.via}} PagerDuty" style="width: 10%;">PagerDuty</td>
+                <td class="first-collumn" title="{{lang.words.alert|title()}} {{lang.words.via}} Mattermost" style="width: 10%;">Mattermost</td>
+                <td class="checkbox-head" style="width: 10%;" title="{{lang.words.alert|title()}} {{lang.words.via}} {{lang.words.email}}">{{lang.words.email|title()}}</td>
+                <td class="checkbox-head" style="width: 10%;" title="{{lang.phrases.alert_service_change_status}}">{{lang.words.service|title()}}</td>
+                <td class="checkbox-head" style="width: 10%;" title="{{lang.phrases.alert_backend_change_status}}">{{lang.words.backend|title()}}</td>
+                <td class="checkbox-head" style="width: 100%;" title="{{lang.phrases.alert_number_conn}}">Maxconn</td>
+                <td><span onclick="loadchecker(1)" class="refresh" title="{{lang.words.refresh2|title()}}"></span></td>
+            </tr>
+            {% for s in haproxy_servers %}
+            {% for h in haproxy_settings %}
+            {% if h.server_id|string() == s.0|string() and h.service_id == 1 %}
+            <tr id="haproxy_server_tr_id-{{h.id}}">
+                <td class="padding10 first-collumn" id="haproxy_server_name-{{h.id}}">{{s.1}}</td>
+                <td id="haproxy_server_telegram-{{h.id}}" title="{{lang.words.alert|title()}} {{lang.words.via}} {{lang.words.this3}} {{lang.words.channel}}">
+                    <select id="haproxy_server_telegram_channel-{{h.id}}">
+                        <option value="0">{{lang.words.disabled|title()}}</option>
+                    {% for t in telegrams %}
+                         {% if h.telegram_id|int() == t.id|int() %}
+                            <option value="{{t.id}}" selected>{{t.chanel_name}}</option>
+                        {% else %}
+                            <option value="{{t.id}}">{{t.chanel_name}}</option>
+                        {% endif %}
+                    {% endfor %}
+                    </select>
+                </td>
+                <td id="haproxy_server_slack-{{s.0}}" title="{{lang.words.alert|title()}} {{lang.words.via}} {{lang.words.this3}} {{lang.words.channel}}">
+                    <select id="haproxy_server_slack_channel-{{h.id}}">
+                        <option value="0">{{lang.words.disabled|title()}}</option>
+                    {% for t in slacks %}
+                        {% if h.slack_id|int() == t.id|int() %}
+                            <option value="{{t.id}}" selected>{{t.chanel_name}}</option>
+                        {% else %}
+                            <option value="{{t.id}}">{{t.chanel_name}}</option>
+                        {% endif %}
+                    {% endfor %}
+                    </select>
+                </td>
+                <td id="haproxy_server_pd-{{s.0}}" title="{{lang.words.alert|title()}} {{lang.words.via}} {{lang.words.this3}} {{lang.words.channel}}">
+                    <select id="haproxy_server_pd_channel-{{h.id}}">
+                        <option value="0">{{lang.words.disabled|title()}}</option>
+                    {% for t in pds %}
+                        {% if h.pd_id|int() == t.id|int() %}
+                            <option value="{{t.id}}" selected>{{t.chanel_name}}</option>
+                        {% else %}
+                            <option value="{{t.id}}">{{t.chanel_name}}</option>
+                        {% endif %}
+                    {% endfor %}
+                    </select>
+                </td>
+                <td id="haproxy_server_mm-{{s.0}}" title="{{lang.words.alert|title()}} {{lang.words.via}} {{lang.words.this3}} {{lang.words.channel}}">
+                    <select id="haproxy_server_mm_channel-{{h.id}}">
+                        <option value="0">{{lang.words.disabled|title()}}</option>
+                    {% for t in mms %}
+                        {% if h.mm_id|int() == t.id|int() %}
+                            <option value="{{t.id}}" selected>{{t.chanel_name}}</option>
+                        {% else %}
+                            <option value="{{t.id}}">{{t.chanel_name}}</option>
+                        {% endif %}
+                    {% endfor %}
+                    </select>
+                </td>
+                <td class="checkbox" title="{{lang.words.alert|title()}} {{lang.words.via}} {{lang.words.email}}">
+                    {% set id = 'haproxy_server_email-' + h.id|string() %}
+                    {% if h.email == 1 %}
+                        {{ checkbox(id, checked='checked') }}
+                    {% else %}
+                        {{ checkbox(id) }}
+                    {% endif %}
+                </td>
+                <td class="checkbox">
+                    {% set id = 'haproxy_server_status-' + h.id|string() %}
+                    {% if h.service_alert == 1 %}
+                        {{ checkbox(id, checked='checked', title=lang.phrases.alert_service_change_status) }}
+                    {% else %}
+                        {{ checkbox(id, title=lang.phrases.alert_service_change_status) }}
+                    {% endif %}
+                </td>
+                <td class="checkbox">
+                    {% set id = 'haproxy_server_backend-' + h.id|string() %}
+                    {% if h.backend_alert == 1 %}
+                        {{ checkbox(id, checked='checked', title=lang.phrases.alert_backend_change_status) }}
+                    {% else %}
+                        {{ checkbox(id, title=lang.phrases.alert_backend_change_status) }}
+                    {% endif %}
+                </td>
+                <td class="checkbox">
+                    {% set id = 'haproxy_server_maxconn-' + h.id|string() %}
+                    {% if h.maxconn_alert == 1 %}
+                        {{ checkbox(id, checked='checked', title=lang.phrases.alert_number_conn) }}
+                    {% else %}
+                        {{ checkbox(id, title=lang.phrases.alert_number_conn) }}
+                    {% endif %}
+                </td>
+                <td></td>
+            </tr>
+            {% endif %}
+            {% endfor %}
+            {% endfor %}
+        </table>
+        <table class="overview-overflow checker_settings_table" id="checker_nginx_table">
+            <caption><i class="fas fa-sitemap caption-icon"></i><h3>NGINX {{lang.words.servers}}</h3></caption>
+            <tr class="overviewHead">
+                <td class="padding10 first-collumn">{{lang.words.server|title()}}</td>
+                <td class="first-collumn" title="{{lang.words.alert|title()}} {{lang.words.via}} Telegram" style="width: 10%;">Telegram</td>
+                <td class="first-collumn" title="{{lang.words.alert|title()}} {{lang.words.via}} Slack" style="width: 10%;">Slack</td>
+                <td class="first-collumn" title="{{lang.words.alert|title()}} {{lang.words.via}} PagerDuty" style="width: 10%;">PagerDuty</td>
+                <td class="first-collumn" title="{{lang.words.alert|title()}} {{lang.words.via}} Mattermost" style="width: 10%;">Mattermost</td>
+                <td class="checkbox-head" style="width: 10%;" title="{{lang.words.alert|title()}} {{lang.words.via}} {{lang.words.email}}">{{lang.words.email|title()}}</td>
+                <td class="checkbox-head" style="width: 100%;" title={{lang.phrases.alert_service_change_status}}>{{lang.words.service|title()}}</td>
+                <td><span onclick="loadchecker(1)" class="refresh" title="{{lang.words.refresh2|title()}}"></span></td>
+            </tr>
+            {% for s in nginx_servers %}
+            {% for h in nginx_settings %}
+            {% if h.server_id|string() == s.0|string() and h.service_id == 2 %}
+            <tr id="nginx_server_tr_id-{{h.id}}">
+                <td class="padding10 first-collumn" id="nginx_server_name-{{h.id}}">{{s.1}}</td>
+                <td id="nginx_server_telegram-{{h.id}}" title="{{lang.words.alert|title()}} {{lang.words.via}} {{lang.words.this3}} {{lang.words.channel}}">
+                    <select id="nginx_server_telegram_channel-{{h.id}}">
+                        <option value="0">Disabled</option>
+                    {% for t in telegrams %}
+                         {% if h.telegram_id|int() == t.id|int() %}
+                            <option value="{{t.id}}" selected>{{t.chanel_name}}</option>
+                        {% else %}
+                            <option value="{{t.id}}">{{t.chanel_name}}</option>
+                        {% endif %}
+                    {% endfor %}
+                    </select>
+                </td>
+                <td id="nginx_server_slack-{{h.id}}" title="{{lang.words.alert|title()}} {{lang.words.via}} {{lang.words.this3}} {{lang.words.channel}}">
+                    <select id="nginx_server_slack_channel-{{h.id}}">
+                        <option value="0">{{lang.words.disabled|title()}}</option>
+                    {% for t in slacks %}
+                        {% if h.slack_id|int() == t.id|int() %}
+                            <option value="{{t.id}}" selected>{{t.chanel_name}}</option>
+                        {% else %}
+                            <option value="{{t.id}}">{{t.chanel_name}}</option>
+                        {% endif %}
+                    {% endfor %}
+                    </select>
+                </td>
+                <td id="nginx_server_pd-{{h.id}}" title="{{lang.words.alert|title()}} {{lang.words.via}} {{lang.words.this3}} {{lang.words.channel}}">
+                    <select id="nginx_server_pd_channel-{{h.id}}">
+                        <option value="0">{{lang.words.disabled|title()}}</option>
+                    {% for t in pds %}
+                        {% if h.pd_id|int() == t.id|int() %}
+                            <option value="{{t.id}}" selected>{{t.chanel_name}}</option>
+                        {% else %}
+                            <option value="{{t.id}}">{{t.chanel_name}}</option>
+                        {% endif %}
+                    {% endfor %}
+                    </select>
+                </td>
+                <td id="nginx_server_mm-{{h.id}}" title="{{lang.words.alert|title()}} {{lang.words.via}} {{lang.words.this3}} {{lang.words.channel}}">
+                    <select id="nginx_server_mm_channel-{{h.id}}">
+                        <option value="0">{{lang.words.disabled|title()}}</option>
+                    {% for t in mms %}
+                        {% if h.mm_id|int() == t.id|int() %}
+                            <option value="{{t.id}}" selected>{{t.chanel_name}}</option>
+                        {% else %}
+                            <option value="{{t.id}}">{{t.chanel_name}}</option>
+                        {% endif %}
+                    {% endfor %}
+                    </select>
+                </td>
+                <td class="checkbox">
+                    {% set id = 'nginx_server_email-' + h.id|string() %}
+                    {% if h.email == 1 %}
+                        {{ checkbox(id, checked='checked', title=lang.words.alert|title()+' '+lang.words.via + ' '+lang.words.email) }}
+                    {% else %}
+                        {{ checkbox(id, title=lang.words.alert|title()+' '+lang.words.via + ' '+lang.words.email) }}
+                    {% endif %}
+                </td>
+                <td class="checkbox">
+                    {% set id = 'nginx_server_status-' + h.id|string() %}
+                    {% if h.service_alert == 1 %}
+                        {{ checkbox(id, checked='checked', title=lang.phrases.alert_service_change_status) }}
+                    {% else %}
+                        {{ checkbox(id, title=lang.phrases.alert_service_change_status) }}
+                    {% endif %}
+                </td>
+                <td></td>
+            </tr>
+            {% endif %}
+            {% endfor %}
+            {% endfor %}
+        </table>
+        <table class="overview-overflow checker_settings_table" id="checker_apache_table">
+            <caption><i class="fas fa-feather-alt caption-icon"></i><h3>Apache {{lang.words.servers}}</h3></caption>
+            <tr class="overviewHead">
+                <td class="padding10 first-collumn">{{lang.words.server|title()}}</td>
+                <td class="first-collumn" title="{{lang.words.alert|title()}} {{lang.words.via}} Telegram" style="width: 10%;">Telegram</td>
+                <td class="first-collumn" title="{{lang.words.alert|title()}} {{lang.words.via}} Slack" style="width: 10%;">Slack</td>
+                <td class="first-collumn" title="{{lang.words.alert|title()}} {{lang.words.via}} PagerDuty" style="width: 10%;">PagerDuty</td>
+                <td class="first-collumn" title="{{lang.words.alert|title()}} {{lang.words.via}} Mattermost" style="width: 10%;">Mattermost</td>
+                <td class="checkbox-head" style="width: 10%;">{{lang.words.email|title()}}</td>
+                <td class="checkbox-head" style="width: 100%;" title="{{lang.phrases.alert_service_change_status}}">{{lang.words.service|title()}}</td>
+                <td><span onclick="loadchecker(1)" class="refresh" title="{{lang.words.refresh2|title()}}"></span></td>
+            </tr>
+            {% for s in apache_servers %}
+            {% for h in apache_settings %}
+            {% if h.server_id|string() == s.0|string() and h.service_id == 4 %}
+            <tr id="apache_server_tr_id-{{h.id}}">
+                <td class="padding10 first-collumn" id="apache_server_name-{{h.id}}">{{s.1}}</td>
+                <td id="apache_server_telegram-{{h.id}}" title="{{lang.words.alert|title()}} {{lang.words.via}} {{lang.words.this3}} {{lang.words.channel}}">
+                    <select id="apache_server_telegram_channel-{{h.id}}">
+                        <option value="0">{{lang.words.disabled|title()}}</option>
+                    {% for t in telegrams %}
+                         {% if h.telegram_id|int() == t.id|int() %}
+                            <option value="{{t.id}}" selected>{{t.chanel_name}}</option>
+                        {% else %}
+                            <option value="{{t.id}}">{{t.chanel_name}}</option>
+                        {% endif %}
+                    {% endfor %}
+                    </select>
+                </td>
+                <td id="apache_server_slack-{{h.id}}" title="{{lang.words.alert|title()}} {{lang.words.via}} {{lang.words.this3}} {{lang.words.channel}}">
+                    <select id="apache_server_slack_channel-{{h.id}}">
+                        <option value="0">{{lang.words.disabled|title()}}</option>
+                    {% for t in slacks %}
+                        {% if h.slack_id|int() == t.id|int() %}
+                            <option value="{{t.id}}" selected>{{t.chanel_name}}</option>
+                        {% else %}
+                            <option value="{{t.id}}">{{t.chanel_name}}</option>
+                        {% endif %}
+                    {% endfor %}
+                    </select>
+                </td>
+                <td id="apache_server_pd-{{h.id}}" title="{{lang.words.alert|title()}} {{lang.words.via}} {{lang.words.this3}} {{lang.words.channel}}">
+                    <select id="apache_server_pd_channel-{{h.id}}">
+                        <option value="0">{{lang.words.disabled|title()}}</option>
+                    {% for t in pds %}
+                        {% if h.pd_id|int() == t.id|int() %}
+                            <option value="{{t.id}}" selected>{{t.chanel_name}}</option>
+                        {% else %}
+                            <option value="{{t.id}}">{{t.chanel_name}}</option>
+                        {% endif %}
+                    {% endfor %}
+                    </select>
+                </td>
+                <td id="apache_server_mm-{{h.id}}" title="{{lang.words.alert|title()}} {{lang.words.via}} {{lang.words.this3}} {{lang.words.channel}}">
+                    <select id="apache_server_mm_channel-{{h.id}}">
+                        <option value="0">{{lang.words.disabled|title()}}</option>
+                    {% for t in mms %}
+                        {% if h.mm_id|int() == t.id|int() %}
+                            <option value="{{t.id}}" selected>{{t.chanel_name}}</option>
+                        {% else %}
+                            <option value="{{t.id}}">{{t.chanel_name}}</option>
+                        {% endif %}
+                    {% endfor %}
+                    </select>
+                </td>
+                <td class="checkbox">
+                    {% set id = 'apache_server_email-' + h.id|string() %}
+                    {% if h.email == 1 %}
+                        {{ checkbox(id, checked='checked', title=lang.words.alert|title()+' '+lang.words.via + ' '+lang.words.email) }}
+                    {% else %}
+                        {{ checkbox(id, title=lang.words.alert|title()+' '+lang.words.via + ' '+lang.words.email) }}
+                    {% endif %}
+                </td>
+                <td class="checkbox">
+                    {% set id = 'apache_server_status-' + h.id|string() %}
+                    {% if h.service_alert == 1 %}
+                        {{ checkbox(id, checked='checked', title=lang.phrases.alert_service_change_status) }}
+                    {% else %}
+                        {{ checkbox(id, title=lang.phrases.alert_service_change_status) }}
+                    {% endif %}
+                </td>
+                <td></td>
+            </tr>
+            {% endif %}
+            {% endfor %}
+            {% endfor %}
+        </table>
+        <table class="overview-overflow checker_settings_table" id="checker_keepalived_table">
+            <caption><i class="fas fa-cloud caption-icon"></i><h3>Keepalived {{lang.words.servers}}</h3></caption>
+            <tr class="overviewHead">
+                <td class="padding10 first-collumn">{{lang.words.server|title()}}</td>
+                <td class="first-collumn" title="{{lang.words.alert|title()}} {{lang.words.via}} Telegram" style="width: 10%;">Telegram</td>
+                <td class="first-collumn" title="{{lang.words.alert|title()}} {{lang.words.via}} Slack" style="width: 10%;">Slack</td>
+                <td class="first-collumn" title="{{lang.words.alert|title()}} {{lang.words.via}} PagerDuty" style="width: 10%;">PagerDuty</td>
+                <td class="first-collumn" title="{{lang.words.alert|title()}} {{lang.words.via}} Mattermost" style="width: 10%;">Mattermost</td>
+                <td class="checkbox-head" style="width: 10%;">{{lang.words.email|title()}}</td>
+                <td class="checkbox-head" style="width: 10%;" title="{{lang.phrases.alert_service_change_status}}">{{lang.words.service|title()}}</td>
+                <td class="checkbox-head" style="width: 100%;" title="{{lang.phrases.alert_master_backup}}">{{lang.words.status|title()}}</td>
+                <td><span onclick="loadchecker(1)" class="refresh" title="{{lang.words.refresh2|title()}}"></span></td>
+            </tr>
+            {% for s in keepalived_servers %}
+            {% for h in keepalived_settings %}
+            {% if h.server_id|string() == s.0|string() and h.service_id == 3 %}
+            <tr id="keepalived_server_tr_id-{{h.id}}">
+                <td class="padding10 first-collumn" id="keepalived_server_name-{{h.id}}">{{s.1}}</td>
+                <td id="keepalived_server_telegram-{{h.id}}" title="{{lang.words.alert|title()}} {{lang.words.via}} {{lang.words.this3}} {{lang.words.channel}}">
+                    <select id="keepalived_server_telegram_channel-{{h.id}}">
+                        <option value="0">{{lang.words.disabled|title()}}</option>
+                    {% for t in telegrams %}
+                         {% if h.telegram_id|int() == t.id|int() %}
+                            <option value="{{t.id}}" selected>{{t.chanel_name}}</option>
+                        {% else %}
+                            <option value="{{t.id}}">{{t.chanel_name}}</option>
+                        {% endif %}
+                    {% endfor %}
+                    </select>
+                </td>
+                <td id="keepalived_server_slack-{{h.id}}" title="{{lang.words.alert|title()}} {{lang.words.via}} {{lang.words.this3}} {{lang.words.channel}}">
+                    <select id="keepalived_server_slack_channel-{{h.id}}">
+                        <option value="0">{{lang.words.disabled|title()}}</option>
+                    {% for t in slacks %}
+                        {% if h.slack_id|int() == t.id|int() %}
+                            <option value="{{t.id}}" selected>{{t.chanel_name}}</option>
+                        {% else %}
+                            <option value="{{t.id}}">{{t.chanel_name}}</option>
+                        {% endif %}
+                    {% endfor %}
+                    </select>
+                </td>
+                <td id="keepalived_server_pd-{{h.id}}" title="{{lang.words.alert|title()}} {{lang.words.via}} {{lang.words.this3}} {{lang.words.channel}}">
+                    <select id="keepalived_server_pd_channel-{{h.id}}">
+                        <option value="0">{{lang.words.disabled|title()}}</option>
+                    {% for t in pds %}
+                        {% if h.pd_id|int() == t.id|int() %}
+                            <option value="{{t.id}}" selected>{{t.chanel_name}}</option>
+                        {% else %}
+                            <option value="{{t.id}}">{{t.chanel_name}}</option>
+                        {% endif %}
+                    {% endfor %}
+                    </select>
+                </td>
+                <td id="keepalived_server_mm-{{h.id}}" title="{{lang.words.alert|title()}} {{lang.words.via}} {{lang.words.this3}} {{lang.words.channel}}">
+                    <select id="keepalived_server_mm_channel-{{h.id}}">
+                        <option value="0">{{lang.words.disabled|title()}}</option>
+                    {% for t in mms %}
+                        {% if h.mm_id|int() == t.id|int() %}
+                            <option value="{{t.id}}" selected>{{t.chanel_name}}</option>
+                        {% else %}
+                            <option value="{{t.id}}">{{t.chanel_name}}</option>
+                        {% endif %}
+                    {% endfor %}
+                    </select>
+                </td>
+                <td class="checkbox">
+                    {% set id = 'keepalived_server_email-' + h.id|string() %}
+                    {% if h.email == 1 %}
+                        {{ checkbox(id, checked='checked', title=lang.words.alert|title()+' '+lang.words.via + ' '+lang.words.email) }}
+                    {% else %}
+                        {{ checkbox(id, title=lang.words.alert|title()+' '+lang.words.via + ' '+lang.words.email) }}
+                    {% endif %}
+                </td>
+                <td class="checkbox">
+                    {% set id = 'keepalived_server_status-' + h.id|string() %}
+                    {% if h.service_alert == 1 %}
+                        {{ checkbox(id, checked='checked', title=lang.phrases.alert_service_change_status) }}
+                    {% else %}
+                        {{ checkbox(id, title=lang.phrases.alert_service_change_status) }}
+                    {% endif %}
+                </td>
+                <td class="checkbox">
+                    {% set id = 'keepalived_server_backend-' + h.id|string() %}
+                    {% if h.backend_alert == 1 %}
+                        {{ checkbox(id, checked='checked', title=lang.phrases.alert_master_backup) }}
+                    {% else %}
+                        {{ checkbox(id, title=lang.phrases.alert_master_backup) }}
+                    {% endif %}
+                </td>
+                <td></td>
+            </tr>
+            {% endif %}
+            {% endfor %}
+            {% endfor %}
+        </table>
+    </div>
+{% endif %}
+{% endif %}
+{% endfor %}
+{% endif %}
+{% include 'include/admins_dialogs.html' %}

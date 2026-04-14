@@ -1,0 +1,95 @@
+{% from 'include/input_macros.html' import input, checkbox %}
+{% import 'languages/'+lang|default('en')+'.html' as lang %}
+{% set sections_name = {
+    'rabbitmq': 'RabbitMQ',
+    'nginx': 'NGINX',
+    'haproxy': 'HAProxy',
+    'apache': 'Apache',
+    'keepalived': 'Keepalived',
+    'main': 'Main',
+    'mail': 'Mail',
+    'monitoring': 'Monitoring',
+    'logs': 'Logs',
+    'ldap': 'LDAP',
+    'smon': 'SMON',
+    }
+%}
+<script defer src="/static/js/admin/admin_settings.js"></script>
+<table id="settings">
+    <tbody>
+        {% set section = namespace(section='') %}
+        {% for set in settings %}
+        {% if g.user_params['role'] == 2 and (set.section in ('monitoring', 'rabbitmq', 'mail', 'smon')) %}
+        <!-- continue -->
+        {% else %}
+        {% if section.section|string() != set.section|string() %}
+        <th colspan="3" title="Show {{ set.section }} section" id="{{set.section}}-section-head" style="cursor: pointer; padding-top: 10px; color: #5b5a5a;">
+            <h3 class="plus-after" id="{{set.section}}-section-h3" style="font-size: 1em; padding-left: 20px;">
+                {{sections_name[set.section]}}
+            </h3>
+        </th>
+        <tr class="overviewHead {{set.section}}-section" style="display: none">
+            <td class="padding10 first-collumn">Parameter</td>
+            <td class="addOption">Value</td>
+            <td class="addOption">Description</td>
+        </tr>
+        {% endif %}
+        {% set section.section = set.section %}
+        {% if g.user_params['role'] == 2 and (set.param == 'proxy') %}
+        <!-- continue -->
+        {% else %}
+        <tr class="{{ loop.cycle('odd', 'even') }} {{set.section}}-section" style="display: none">
+            <td class="addName">
+                {{set.param}}
+            </td>
+            <td class="addOption">
+                {% if set.param in ('ldap_password', 'haproxy_stats_password', 'nginx_stats_password', 'apache_stats_password', 'rabbitmq_password', 'mail_smtp_password', 'license') %}
+                    {% if set.value == '' or set.value is none %}
+                        {{ input(set.param, size='25', type='password', style='width: 210px;') }}
+                    {% else %}
+                        {{ input(set.param, size='25', type='password', style='width: 210px;', placeholder='******') }}
+                    {% endif %}
+                {% elif set.param in ('nginx_stats_port', 'session_ttl', 'token_ttl', 'haproxy_stats_port', 'haproxy_sock_port', 'master_port',
+                    'ldap_port', 'log_time_storage', 'checker_check_interval', 'port_scan_interval', 'smon_keep_history_range', 'agent_port',
+                    'checker_keep_history_range', 'portscanner_keep_history_range', 'checker_maxconn_threshold', 'apache_stats_port',
+                    'mail_smtp_port', 'rabbitmq_port', 'smon_ssl_expire_warning_alert', 'smon_ssl_expire_critical_alert', 'action_keep_history_range') %}
+                    {{ input(set.param, value=set.value, style='width: 210px;', type='number') }}
+                {% elif set.param == 'time_zone' %}
+                    <select name="{{set.param}}" id="{{set.param}}" style="width: 215px;">
+                        {% for zone in timezones %}
+                        {% if set.value == zone %}
+                        <option value="{{zone}}" selected>{{zone}}</option>
+                        {% else %}
+                        <option value="{{zone}}">{{zone}}</option>
+                        {% endif %}
+                        {% endfor %}
+                    </select>
+                {% elif set.param in ('ldap_type', 'ldap_enable', 'syslog_server_enable', 'mail_ssl') %}
+                    {% if set.value|int() == 1 %}
+                        {{ checkbox(set.param, checked='checked', style='margin: 0') }}
+                    {% else %}
+                        {{ checkbox(set.param, style='margin: 0') }}
+                    {% endif %}
+                {% else %}
+                    {% if set.value is none %}
+                        {{ input(set.param, size='25', style='width: 210px;') }}
+                    {% else %}
+                        {{ input(set.param, value=set.value, size='25', style='width: 210px;') }}
+                    {% endif %}
+                {% endif %}
+            </td>
+            <td class="addOption">
+                {{ lang.settings[set.section][set.param] }}
+            </td>
+        </tr>
+        {% endif %}
+        {% endif %}
+        {% endfor %}
+    </tbody>
+</table>
+<script>
+	$(document).ready(function() {
+        $("#time_zone").selectmenu("destroy");
+		$('#time_zone').select2();
+	});
+</script>

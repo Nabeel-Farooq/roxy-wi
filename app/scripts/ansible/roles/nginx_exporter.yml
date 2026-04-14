@@ -1,0 +1,20 @@
+- hosts: all
+  become: yes
+  become_method: sudo
+  tasks:
+  - name: Open stat port for iptables
+    iptables:
+      chain: INPUT
+      destination_port: "9113"
+      jump: ACCEPT
+      protocol: tcp
+    ignore_errors: yes
+
+    
+  roles:
+  - role: nginx_exporter
+    environment:
+      http_proxy: "{{PROXY}}"
+      https_proxy: "{{PROXY}}"
+    vars:
+      nginx_exporter_options: ['-nginx.scrape-uri http://{{STATS_USER}}:{{STATS_PASS}}@{{ansible_host}}:{{STAT_PORT}}/{{STAT_PAGE}}']

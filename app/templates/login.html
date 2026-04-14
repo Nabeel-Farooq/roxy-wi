@@ -1,0 +1,83 @@
+{% from 'include/input_macros.html' import input %}
+<html lang="{{lang|default('en')}}">
+{% import 'languages/'+lang|default('en')+'.html' as lang %}
+<head>
+    {% include 'include/main_head.html' %}
+</head>
+<body>
+<style>
+.fontuser {
+	position: relative;
+}
+.fontuser i {
+	position: absolute;
+	left: 9px;
+	top: 10px;
+	{#color: #036bb0;#}
+}
+.fontpassword {
+	position: relative;
+	margin-bottom: 15px;
+}
+.fontpassword i {
+	position: absolute;
+	left: 9px;
+	top: 10px;
+}
+.fontpassword span i {
+	position: absolute;
+	left: 193px;
+    top: 10px;
+    color: #036bb0;
+    font-size: 17px;
+	cursor: pointer;
+}
+</style>
+<script>
+$( function() {
+    let theme = localStorage.getItem('theme');
+    if (theme === 'dark') {
+        $('#logo_span').children().attr('src', '/static/images/logo_white.png');
+    }
+});
+</script>
+<div id="main_div">
+	<div id="login-form">
+		<span id="logo_span">
+			<img src="{{ url_for('static', filename='images/logo_login.png')}}">
+		</span>
+		<form class="form-horizontal" id="auth" method="post">
+			<div class="fontuser">
+				{{ input('login', class='form-login', placeholder=lang.words.login|title(), required='required', autofocus='autofocus') }}
+				<i class="fa fa-user fa-lg"></i>
+			</div>
+			<br>
+			<div class="fontpassword">
+				{{ input('pass', type='password', class='form-login', placeholder=lang.words.password|title(), required='required') }}
+				{{ input('ref', type='hidden', value=ref) }}
+				<i class="fa fa-key fa-lg"></i>
+				<span onclick="showPassword('pass')" title="{{lang.words.show|title()}} {{lang.words.password}}">
+				<i class="far fa-eye"></i>
+					</span>
+			</div>
+			<button type="submit" name="Login" value="Enter" id="enter">{{lang.words.login2|title()}}</button>
+		</form>
+    </div>
+		{% if error_log or error %}
+		<div class="alert alert-danger wrong-login alert-one-row" style="display: block; float: left;">
+			{{error_log}}
+			{{error}}
+		</div>
+		{% endif %}
+		<div class="alert alert-danger wrong-login alert-one-row" id="wrong-login" style="float: left;">
+			{{lang.phrases.login_or_pass_incorrect}}
+			<br />
+			<span id="ban_10">
+				{{lang.phrases.can_try_again}} <span id="ban_timer">10</span> {{lang.words.seconds2}}
+			</span>
+		</div>
+		<br /><br />
+	</div>
+</div>
+</body>
+</html>

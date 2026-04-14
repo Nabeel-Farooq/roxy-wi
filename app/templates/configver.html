@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}{{ lang.menu_links.versions.h2 }} {{ lang.words[service] }}{% endblock %}
+{% block h2 %}{{ lang.menu_links.versions.h2 }} {{ lang.words[service] }}{% endblock %}
+{% block content %}
+    <script src="/static/js/configshow.js"></script>
+	<p>
+		<form action="/config/versions/{{service}}/{{serv}}" method="post" class="left-space">
+			<input type="hidden" id="service" value="{{service}}">
+			{{ select('serv', values=g.user_params['servers'], is_servers='true', selected=serv) }}
+            <a href="/config/versions/{{service}}/{{ serv }}" class="ui-button ui-widget ui-corner-all" title="Open versions">{{lang.words.open|title()}}</a>
+		</form>
+	</p>
+		<div id="config_version_div"></div>
+		<script>showListOfVersion(0)</script>
+{% endblock %}

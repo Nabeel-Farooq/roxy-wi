@@ -1,0 +1,238 @@
+{% extends "base.html" %}
+{% block title %}{{ lang.p_s_page.p_s_title }}{% endblock %}
+{% block h2 %}{{ lang.p_s_page.p_s_title }}{% endblock %}
+{% block content %}
+{% from 'include/input_macros.html' import input, checkbox, select %}
+<script src="/static/js/overview.js"></script>
+<style>
+.alert-danger {
+	width: 250px;
+	display: inline-block;
+	height: 15px;
+	padding-top: 0px;
+	padding-bottom: 8px;
+	margin-bottom: -20px !important;
+}
+.ui-checkboxradio-label {
+	padding-bottom: 5px !important;
+	padding-top: 5px !important;
+}
+</style>
+{% if user_subscription['user_status'] == 0 %}
+	{% include 'include/no_sub.html' %}
+{% else %}
+{% if 'is not installed' in port_scanner or 'ERROR' in port_scanner %}
+<div style="text-align: center;">
+	<br />
+	<h3>{{lang.admin_page.desc.no_ansible}} Port scanner {{lang.words.service}}. {{lang.words.read|title()}} <a href="https://roxy-wi.org/services/portscanner"
+	title="Port scanner" target="_blank">{{lang.words.here}}</a> {{lang.phrases.how_to_install}} Port scanner {{lang.words.service}}</h3>
+</div>
+{% else %}
+	<div id="up-pannel">
+	{% if g.user_params['servers']|length == 0 %}
+		{% include 'include/getstarted.html' %}
+	{% endif %}
+	{% for s in g.user_params['servers'] %}
+		<div id="div-server-{{s.0}}" class="div-server-hapwi
+			{%- if port_scanner == 'active' %}
+				div-server-head-up
+			{%- else %}
+				div-server-head-down
+			{%- endif -%}">
+			<div class="server-name">
+				<input type="hidden" id="server-name-{{s.0}}" value="{{s.1}}" />
+					{% for p in port_scanner_settings %}
+					{% if port_scanner_settings|length > 0 %}
+						{% if p.server_id == s.0 and p.enabled == 1 %}
+							{% if port_scanner == 'active' %}
+								<span id="portscanner_enable_status-{{p.server_id}}" class="serverUp server-status" title="{{lang.p_s_page.desc.is_enabled_and_up}}"></span>
+							{% else %}
+								<span id="portscanner_enable_status-{{p.server_id}}" class="serverDown server-status" title="{{lang.p_s_page.desc.is_enabled_and_down}}"></span>
+							{% endif %}
+						{% elif p.server_id == s.0 and p.enabled == 0 %}
+							<span id="portscanner_enable_status-{{p.server_id}}" class="serverNone server-status" title="Port scanner {{lang.words.is}} {{lang.words.disabled}}"></span>
+						{% endif %}
+					{% else %}
+						<span id="portscanner_enable_status-{{p.server_id}}" class="serverNone server-status" title="Port scanner {{lang.words.is}} {{lang.words.disabled}}"></span>
+					{% endif %}
+					{% endfor %}
+					{% if s.0 not in port_scanner_settings|map(attribute='server_id') %}
+						<span id="portscanner_enable_status-{{s.0}}" class="serverNone server-status" title="Port scanner {{lang.words.is}} {{lang.words.disabled}}"></span>
+					{% endif %}
+					{% if not serv %}
+						<a href="/portscanner/history/{{s.2}}" title="{{lang.words.view|title()}} Port scanner {{lang.words.history2}} {{lang.words.for}} {{s.1}}" style="color: #5d9ceb">{{s.1}}</a>
+					{% else %}
+						{{s.1}}
+					{% endif %}
+				{% if g.user_params['role'] <= 2 %}
+					<span class="server-action"></span>
+				{% endif %}
+			</div>
+			<div class="server-desc">
+				{{s.11}}
+				<br />
+				IP: {{s.2}}
+				<br />
+				{{lang.words.last|title()}} {{lang.words.scan}}:
+				{% if count_ports is defined %}
+				{% for c in count_ports %}
+					{% if c.0 == s.2 %}
+					 {{c.1.0.1}}
+					{% endif %}
+				{% endfor %}
+				{% endif %}
+				<br />
+				{{lang.p_s_page.desc.total_open_ports}}:
+				{% if count_ports is defined %}
+				{% for c in count_ports %}
+					{% if c.0 == s.2 %}
+					 {{c.1.0.0}}
+					{% endif %}
+				{% endfor %}
+				{% endif %}
+				<br />
+			</div>
+			<div class="server-act-links" id="server-{{s.0}}">
+				{% if g.user_params['role'] <= 2 %}
+					{% set portscanner_enable_id = 'portscanner_enable-' + s.0|string() %}
+					{% set portscanner_notify_id = 'portscanner_notify-' + s.0|string() %}
+					{% set portscanner_history_id = 'portscanner_history-' + s.0|string() %}
+					{% if port_scanner_settings|length > 0 %}
+						{% for p in port_scanner_settings %}
+							{% if p.server_id == s.0 %}
+								{% set disabled = 'false' %}
+								{% if p.enabled == 0 %}
+									{% set disabled = 'true' %}
+								{% endif %}
+								{% if p.enabled == 1 %}
+									{{ checkbox(portscanner_enable_id, title="Port scanner "+lang.words.enabled, checked='checked', desc='Port scanner') }}
+								{% else %}
+									{{ checkbox(portscanner_enable_id, title="Port scanner "+lang.words.disabled, desc='Port scanner') }}
+								{% endif %}
+								{% if p.notify == 1 %}
+									{{ checkbox(portscanner_notify_id, title=lang.words.notification|title()+" "+ lang.words.via +" Telegram/Slack "+lang.words.enabled, checked='checked', desc=lang.words.notify|title()) }}
+								{% else %}
+									{{ checkbox(portscanner_notify_id, title=lang.words.notification|title()+" "+ lang.words.via +" Telegram/Slack "+lang.words.disabled, desc=lang.words.notify|title(), disabled=disabled) }}
+								{% endif %}
+								{% if p.history == 1 %}
+									{{ checkbox(portscanner_history_id, title=lang.words.keeping|title()+" "+ lang.words.history3 + " "+lang.words.enabled, checked='checked', desc=lang.words.keep|title()+' '+lang.words.history2) }}
+								{% else %}
+									{{ checkbox(portscanner_history_id, title=lang.words.keeping|title()+" "+ lang.words.history3 + " "+lang.words.disabled, desc=lang.words.keep|title()+' '+lang.words.history2, disabled=disabled) }}
+								{% endif %}
+							{% endif %}
+						{% endfor %}
+						{% if s.0 not in port_scanner_settings|map(attribute='server_id') %}
+							{{ checkbox(portscanner_enable_id, title="Port scanner "+lang.words.disabled, desc='Port scanner') }}
+							{{ checkbox(portscanner_notify_id, title=lang.words.notification|title()+" "+ lang.words.via +" Telegram/Slack "+lang.words.disabled, desc=lang.words.notify|title(), disabled='true') }}
+							{{ checkbox(portscanner_history_id, title=lang.words.keeping|title()+" "+ lang.words.history3 + " "+lang.words.disabled, desc=lang.words.keep|title()+' '+lang.words.history2, disabled='true') }}
+						{% endif %}
+					{% else %}
+						{{ checkbox(portscanner_enable_id, title="Port scanner "+lang.words.disabled, desc='Port scanner') }}
+						{{ checkbox(portscanner_notify_id, title=lang.words.notification|title()+" "+ lang.words.via +""+lang.words.disabled, desc=lang.words.notify|title(), disabled='true') }}
+						{{ checkbox(portscanner_history_id, title=lang.words.keeping|title()+" "+ lang.words.history3 + " "+lang.words.disabled, desc=lang.words.keep|title()+' '+lang.words.history2, disabled='true') }}
+					{% endif %}
+				{% endif %}
+				<br />
+				<button onclick="scanPorts('{{s.0}}')" title="{{lang.p_s_page.desc.scanning_ports}} {{s.1}}">{{lang.words.run|title()}} {{lang.words.scan}}</button>
+			</div>
+		</div>
+	{% endfor %}
+	</div>
+	<div class="add-note addName alert-info" style="width: inherit; margin-right: 15px; margin-top: 45%;clear: both;">
+		{{lang.words.read|title()}} {{lang.words.about}} Port scanner {{lang.words.service}} {{lang.words.in}} {{lang.words.this2}} <a href="https://roxy-wi.org/services/portscanner" title="The Port scanner service description" target="_blank">{{lang.words.article}}</a>
+	</div>
+{% endif %}
+<div id="show_scans_ports" style="display: none; padding: 0;">
+    <div id="show_scans_ports_body"></div>
+</div>
+<script>
+	function scanPorts(id) {
+		$.ajax({
+            url: "/portscanner/scan",
+            data: JSON.stringify({'id': id}),
+            type: "POST",
+            contentType: "application/json; charset=utf-8",
+            success: function (data) {
+                if (data.status === 'failed') {
+                    toastr.error(data.error);
+                } else {
+                    toastr.clear();
+                    $("#show_scans_ports_body").html(data.data);
+                    var close_word = $('#translate').attr('data-close');
+                    $("#show_scans_ports").dialog({
+                        resizable: false,
+                        height: "auto",
+                        width: 360,
+                        modal: true,
+                        title: "{{lang.words.opened|title()}} {{lang.words.ports}}",
+                        buttons: [{
+                            text: close_word,
+                            click: function () {
+                                $(this).dialog("close");
+                                $("#show_scans_ports_body").html('');
+                            }
+                        }]
+                    });
+                }
+            }
+        });
+	}
+	$( ".server-act-links" ).change(function() {
+		var id = $(this).attr('id').split('-');
+		updatePortScannerSettings(id[1])
+	});
+	function updatePortScannerSettings(id) {
+		var portscanner_enabled = 0;
+		var portscanner_notify = 0;
+		var portscanner_history = 0;
+		if ($('#portscanner_enable-'+id).is(':checked')) {
+			portscanner_enabled = '1';
+			$('#portscanner_enable_status-'+id).removeClass('serverDown');
+			$('#portscanner_enable_status-'+id).removeClass('serverNone');
+			$('#portscanner_enable_status-'+id).addClass('serverUp');
+		}
+		if (portscanner_enabled == '0') {
+			$('#portscanner_enable_status-'+id).removeClass('serverDown');
+			$('#portscanner_enable_status-'+id).removeClass('serverUp');
+			$('#portscanner_enable_status-'+id).addClass('serverNone');
+		}
+		if ($('#portscanner_notify-'+id).is(':checked')) {
+			portscanner_notify = '1';
+		}
+		if ($('#portscanner_history-'+id).is(':checked')) {
+			portscanner_history = '1';
+		}
+		if (portscanner_enabled == '1') {
+			$('#portscanner_notify-'+id).checkboxradio('enable');
+			$('#portscanner_history-'+id).checkboxradio('enable');
+		}
+		if (portscanner_enabled == '0') {
+			$('#portscanner_notify-'+id).checkboxradio('disable');
+			$('#portscanner_history-'+id).checkboxradio('disable');
+		}
+		$.ajax({
+			url: "/portscanner/settings",
+			data: {
+				server_id: id,
+				enabled: portscanner_enabled,
+				notify: portscanner_notify,
+				history: portscanner_history
+			},
+			type: "POST",
+			success: function (data) {
+				data = data.replace(/\s+/g, ' ');
+				if (data.indexOf('error:') != '-1') {
+					toastr.error(data);
+				} else {
+					toastr.clear();
+					$("#server-" + id).addClass("update", 1000);
+					setTimeout(function () {
+						$("#server-" + id).removeClass("update");
+					}, 2500);
+				}
+			}
+		} );
+}
+</script>
+{% endif %}
+{% endblock %}

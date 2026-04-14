@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}{{lang.menu_links.add_proxy.title}}{% endblock %}
+{% block h2 %}{{lang.menu_links.add_proxy.title}}{% endblock %}
+{% block content %}
+{% from 'include/input_macros.html' import input, checkbox, select %}
+{% set balance_params = {'ip_hash':'ip_hash','least_conn':'least_conn','random':'random', 'round_robin': 'round-robin'} %}
+<script src="/static/js/add_nginx.js"></script>
+<script src="/static/js/add_common.js"></script>
+{% if user_subscription.user_status == 0 %}
+	{% include 'include/no_sub.html' %}
+{% else %}
+<div id="tabs">
+	<ul>
+		<li><a href="#create" title="{{lang.words.add|title()}} {{lang.words.proxy}}: {{lang.words.add|title()}} {{lang.words.proxy}} - Roxy-WI">{{lang.words.add|title()}} {{lang.words.proxy}}</a></li>
+		<li><a href="#proxypass" title="{{lang.words.add|title()}} {{lang.words.proxy}}: {{lang.words.add|title()}} Proxy pass - Roxy-WI">{{lang.words.add|title()}} Proxy pass</a></li>
+		<li><a href="#upstream" title="{{lang.words.add|title()}} {{lang.words.proxy}}: {{lang.words.create|title()}} {{lang.words.upstream|title()}} - Roxy-WI">{{lang.words.upstream|title()}}</a></li>
+        <li><a href="#add-servers" title="{{lang.words.add|title()}} {{lang.words.proxy}}: {{lang.words.servers|title()}} {{lang.words.templates}} - Roxy-WI">{{lang.words.servers|title()}}</a></li>
+	</ul>
+	<ul id='browse_histroy'></ul>
+	{% include 'include/add_nginx/add_nginx_proxy.html' %}
+    <div id="proxypass">
+        {% include 'include/add_nginx/proxy_pass.html' %}
+    </div>
+    <div id="upstream">
+        {% include 'include/add_nginx/upstream.html' %}
+    </div>
+    <div id="add-servers">
+		{% include 'include/add/servers.html' %}
+	</div>
+	<div id="dialog-confirm-cert-edit" title="View certificate " style="display: none;">
+		<span><b>Note:</b> Each new address must be specified from a new line</span>
+		<textarea id="edit_lists" style="width: 100%" rows=20></textarea>
+	</div>
+	<div id="dialog-confirm-cert" title="View certificate " style="display: none;">
+		<pre id="dialog-confirm-body"></pre>
+	</div>
+	<input type="hidden" id="group_id" value="{{ g.user_params['group_id'] }}">
+</div>
+{% include 'include/del_confirm.html' %}
+<script>
+$( function() {
+	if (window.matchMedia('(max-width: 1280px)').matches || window.matchMedia('(max-width: 1024px)').matches || window.matchMedia('(max-width: 667px)').matches) {
+		$( "select" ).selectmenu({
+			  width: 150
+		});
+	}
+});
+</script>
+{% endif %}
+{% endblock %}

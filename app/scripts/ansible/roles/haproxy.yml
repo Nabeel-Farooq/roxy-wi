@@ -1,0 +1,31 @@
+---
+- name: Install HAProxy as a service
+  hosts: all
+  become: yes
+  become_method: sudo
+  gather_facts: yes
+  roles:
+    - role: haproxy
+      environment:
+        http_proxy: "{{PROXY}}"
+        https_proxy: "{{PROXY}}"
+
+  tags:
+    - system
+
+- name: Install HAProxy as a Docker
+  hosts: all
+  become: yes
+  become_method: sudo
+  gather_facts: yes
+  roles:
+    - role: docker
+      environment:
+        http_proxy: "{{PROXY}}"
+        https_proxy: "{{PROXY}}"
+    - role: haproxy-docker
+      environment:
+        http_proxy: "{{PROXY}}"
+        https_proxy: "{{PROXY}}"
+  tags:
+    - docker

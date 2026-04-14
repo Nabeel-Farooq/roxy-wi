@@ -1,0 +1,74 @@
+{% import 'languages/'+lang|default('en')+'.html' as lang %}
+{% from 'include/input_macros.html' import input, checkbox, copy_to_clipboard %}
+{% for cluster in clusters %}
+<div id="cluster-{{cluster.id}}" class="div-server-hapwi div-server-head-dis">
+    <div class="server-name">
+        <a href="/ha/cluster/{{cluster.id}}" title="{{lang.words.open|title()}} {{lang.words.cluster|replace("'", "")}}">
+            <span id="cluster-name-{{cluster.id}}">{{cluster.name|replace("'", "")}}</span>
+            <span id="cluster-desc-{{cluster.id}}">{% if cluster.description != '' and cluster.description != 'None' %} ({{cluster.description|replace("'", "")}}) {% endif %}</span>
+        </a>
+        <span class="server-action">
+            {% if g.user_params['role'] <= 3 %}
+            <a class="plus" onclick="add_vip_ha_cluster('{{cluster.id}}', '{{cluster.name|replace("'", "")}}')"></a>
+            <a class="edit" onclick="createHaClusterStep1(true, '{{cluster.id}}')"></a>
+            <a class="delete" onclick="confirmDeleteCluster('{{cluster.id}}')"></a>
+            {% endif %}
+            <a href="{{ url_for('main.service_history', service='cluster', server_ip=cluster.id) }}" title="{{lang.words.view|title()}} {{lang.words.history3}} {{cluster.name|replace("'", "")}}" class="history" style="margin: 0 5px 0 10px;"></a>
+        </span>
+    </div>
+    <div class="server-desc">
+        {% for slave in slaves %}
+            {% if slave.31 %}
+                Master name: {{ copy_to_clipboard(id='master-server-'+cluster.id|string(), value=slave.1) }}<br>
+                Master IP: {{ copy_to_clipboard(id='master-ip-'+cluster.id|string(), value=slave.2) }}<br>
+                <span style="display: none;" id="master-id-{{ cluster.id }}">{{ slave.0 }}</span>
+            {% endif %}
+         {% endfor %}
+        {{lang.words.slaves|title()}}:
+        {% for slave in slaves %}
+            {% if not slave.31 %}
+            <span class="cluster-server">{{slave.1}}</span> ({{slave.2}})
+            {% endif %}
+         {% endfor %}
+        <div>
+        {{lang.words.virtual|title()}} {{lang.words.servers}}:
+        {% for virt in virts %}
+            {% if virt.cluster_id|string() == cluster.id|string() %}
+                {% for server in servers %}
+                {% if virt.virt_id|string() == server.0|string() %}
+                    <span class="cluster-server">{{server.1}}</span> ({{server.2}})
+                {% endif %}
+                {% endfor %}
+            {% endif %}
+        {% endfor %}
+        </div>
+        <div>
+            VIP:
+            <span id="cluster-vip">
+            {%- for vip in vips %}
+                {% if g.user_params['role'] <= 2 %}
+                    <a style="cursor: pointer;" onclick="add_vip_ha_cluster('{{vip.cluster_id}}', '{{cluster.name|replace("'", "")}}', '{{vip.id}}', '{{vip.vip}}', 1)" title="{{lang.words.edit|title()}} VIP">{{vip.vip}}</a>
+                {% else %}
+                    {{vip.vip}}
+                {%- endif -%}
+            {%- endfor -%}
+            </span>
+        </div>
+        <div>
+            {{lang.words.services|title()}}:
+            {% for c_s in cluster_services %}
+                {% if c_s.cluster_id|string() == cluster.id|string() %}
+                {% for service in services %}
+                {% if c_s.service_id|string() == service.service_id|string() %}
+                <span id="{{ service.slug }}-{{ cluster.id }}-status" class="serverNone server-status-small" title="Service is none"></span>
+                <a href="/service/{{service.slug}}">{{service.service}}</a>
+                {% endif %}
+                {% endfor %}
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+    {{ input('router_id-'+ cluster.id|string(), type='hidden') }}
+</div>
+<script>checkHaClusterStatus({{ cluster.id }})</script>
+{% endfor %}

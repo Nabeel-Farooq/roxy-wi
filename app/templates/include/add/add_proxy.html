@@ -1,0 +1,168 @@
+{% if add %}
+	<div class="alert alert-success" style="position: absolute;top: 45px;left: 5px;">	
+		<div id="close">
+			<span title="Close" style="cursor: pointer; float: right;">X</span>
+		</div>
+		<h3>{{ add }} {{lang.add_page.desc.was_success_added}}</h3>
+		{{ conf_add }}
+	</div>
+	<script>
+		$('#close').click(function(){
+			$('.alert-success').remove();
+		});
+	</script>
+{% endif %}
+<div id="create" style="margin-top: 20px;">
+		<div id="left-collumn">
+			<div class="div-pannel">
+				<div class="div-server add-proxy-listen-head">
+					<div class="server-name">
+						<span title="{{lang.words.create|title()}} {{lang.words.listener|title()}}" class="redirectListen span-link">{{lang.words.create|title()}} {{lang.words.listener|title()}}</span>
+					</div>
+					<div class="server-desc add_proxy">
+						{{lang.add_page.desc.listener_desc1}}
+					</div>					
+				</div>
+			</div>
+			<div class="div-pannel">
+				<div class="div-server add-proxy-listen-head">
+					<div class="server-name">
+						<span title="{{lang.words.create|title()}} HTTP {{lang.words.listener|title()}}" class="redirectListen span-link" id="create-http-listen">{{lang.words.create|title()}} HTTP {{lang.words.listener|title()}}</span>
+					</div>
+					<div class="server-desc">
+							{{lang.words.create|title()}} HTTP {{lang.words.proxy}}
+					</div>				
+				</div>
+			</div>
+			<div class="div-pannel">
+				<div class="div-server add-proxy-listen-head">
+					<div class="server-name">
+						<span title="{{lang.words.create|title()}} SSL {{lang.words.listener|title()}}" class="redirectListen span-link" id="create-ssl-listen">{{lang.words.create|title()}} SSL {{lang.words.listener|title()}}</span>
+					</div>
+					<div class="server-desc add_proxy">
+						{{lang.add_page.desc.create_ssl_proxy}} <a href="{{ url_for('service.ssl_service', service='haproxy') }}" target="_blank">{{lang.words.uploaded}} {{lang.words.w_a}} PEM {{lang.words.cert}}</a>
+					</div>				
+				</div>
+			</div>
+			<div class="div-pannel">
+				<div class="div-server add-proxy-listen-head">
+					<div class="server-name">
+						<span title="{{lang.words.create|title()}} HTTPS {{lang.words.listener|title()}}" class="redirectListen span-link" id="create-https-listen">{{lang.words.create|title()}} HTTPS {{lang.words.listener|title()}}</span>
+					</div>
+					<div class="server-desc add_proxy">
+						{{lang.add_page.desc.create_https_proxy}}
+					</div>				
+				</div>
+			</div>
+			<div class="div-pannel">
+				<div class="div-server add-proxy-listen-head">
+					<div class="server-name">
+						<span title="{{lang.words.create|title()}} {{lang.words.an}} {{lang.words.option}} {{lang.words.template}}" class="span-link" id="add4">{{lang.words.create|title()}} {{lang.words.an}} {{lang.words.option}} {{lang.words.template}}</span>
+					</div>
+					<div class="server-desc add_proxy">
+						{{lang.add_page.desc.option_temp}}
+					</div>				
+				</div>
+			</div>
+		</div>
+		<div id="middle-collumn">
+			<div class="div-pannel">
+				<div class="div-server add-proxy-frontend-head">
+					<div class="server-name">
+						<span title="{{lang.words.create|title()}} {{lang.words.frontend|title()}}" class="redirectFrontend span-link">{{lang.words.create|title()}} {{lang.words.frontend|title()}}</span>
+					</div>
+					<div class="server-desc add_proxy">
+						{{lang.add_page.desc.front_desc1}}
+					</div>
+				</div>
+			</div>
+			<div class="div-server add-proxy-frontend-head">
+				<div class="server-name">
+					<span title="{{lang.words.create|title()}} HTTP {{lang.words.frontend|title()}}" class="redirectListen span-link" id="create-http-frontend">{{lang.words.create|title()}} HTTP {{lang.words.frontend|title()}}</span>
+				</div>
+				<div class="server-desc">
+					{{lang.words.create|title()}} HTTP {{lang.words.frontend}}
+				</div>				
+			</div>
+			<div class="div-pannel">
+				<div class="div-server add-proxy-frontend-head">
+					<div class="server-name">
+						<span title="{{lang.words.create|title()}} SSL {{lang.words.frontend|title()}}" class="redirectListen span-link" id="create-ssl-frontend">{{lang.words.create|title()}} SSL {{lang.words.frontend|title()}}</span>
+					</div>
+					<div class="server-desc add_proxy">
+						{{lang.add_page.desc.create_ssl_front}} <a href="{{ url_for('service.ssl_service', service='haproxy') }}" target="_blank">{{lang.words.uploaded}} {{lang.words.w_a}} PEM {{lang.words.cert}}</a>
+					</div>				
+				</div>
+			</div>
+			<div class="div-pannel">
+				<div class="div-server add-proxy-frontend-head">
+					<div class="server-name">
+						<span title="{{lang.words.create|title()}} HTTPS {{lang.words.frontend|title()}}" class="redirectListen span-link" id="create-https-frontend">{{lang.words.create|title()}} HTTPS {{lang.words.frontend|title()}}</span>
+					</div>
+					<div class="server-desc add_proxy">
+						{{lang.add_page.desc.create_https_front}}
+					</div>				
+				</div>
+			</div>
+			<div class="div-pannel">
+				<div class="div-server add-proxy-frontend-head">
+					<div class="server-name">
+						<span title="{{lang.words.create|title()}} {{lang.words.w_a}} {{lang.words.server}} {{lang.words.template}}" class="span-link" id="add5">{{lang.words.create|title()}} {{lang.words.w_a}} {{lang.words.server}} {{lang.words.template}}</span>
+					</div>
+					<div class="server-desc add_proxy">
+						{{lang.add_page.desc.server_temp}}
+					</div>				
+				</div>
+			</div>
+		</div>
+		<div id="right-collumn">
+			<div class="div-pannel">
+				<div class="div-server add-proxy-backend-head">
+					<div class="server-name">
+						<span title="{{lang.words.create|title()}} {{lang.words.backend|title()}}" class="redirectBackend span-link">{{lang.words.create|title()}} {{lang.words.backend|title()}}</span>
+					</div>
+					<div class="server-desc add_proxy">
+						{{lang.add_page.desc.back_des1}}
+					</div>			
+				</div>
+			</div>
+			<div class="div-server add-proxy-backend-head">
+				<div class="server-name">
+					<span title="{{lang.words.create|title()}} HTTP {{lang.words.backend|title()}}" class="redirectListen span-link" id="create-http-backend">{{lang.words.create|title()}} HTTP {{lang.words.backend|title()}}</span>
+				</div>
+				<div class="server-desc add_proxy">
+					{{lang.words.create|title()}} HTTP {{lang.words.backend}}
+				</div>				
+			</div>
+			<div class="div-pannel">
+				<div class="div-server add-proxy-backend-head">
+					<div class="server-name">
+						<span title="{{lang.words.create|title()}} SSL {{lang.words.backend|title()}}" class="redirectListen span-link" id="create-ssl-backend">{{lang.words.create|title()}} SSL {{lang.words.backend|title()}}</span>
+					</div>
+					<div class="server-desc add_proxy">
+						{{lang.add_page.desc.create_ssl_backend}} <a href="{{ url_for('service.ssl_service', service='haproxy') }}" target="_blank">{{lang.words.uploaded}} {{lang.words.w_a}} PEM {{lang.words.cert}}</a>
+					</div>				
+				</div>
+			</div>
+			<div class="div-pannel">
+				<div class="div-server add-proxy-backend-head">
+					<div class="server-name">
+						<span title="{{lang.words.create|title()}} HTTPS {{lang.words.backend|title()}}" class="redirectListen span-link" id="create-https-backend">{{lang.words.create|title()}} HTTPS {{lang.words.backend|title()}}</span>
+					</div>
+					<div class="server-desc add_proxy">
+						{{lang.add_page.desc.create_https_backend}}
+					</div>				
+				</div>
+			</div>
+			<div class="div-pannel">
+				<div class="div-server add-proxy-backend-head">
+					<div class="server-name">
+						<span title="{{lang.words.create|title()}} {{lang.words.userlist}}" class="span-link" id="add6">{{lang.words.create|title()}} {{lang.words.userlists}}</span>
+					</div>
+					<div class="server-desc add_proxy">
+						{{lang.words.create|title()}} {{lang.words.userlists}}. {{lang.add_page.desc.use_add}}
+					</div>				
+				</div>
+			</div>
+		</div>
+	</div>

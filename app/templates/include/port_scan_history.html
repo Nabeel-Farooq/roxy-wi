@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}{{ lang.p_s_page.p_s_title_history }}{% endblock %}
+{% block h2 %}{{ lang.p_s_page.p_s_title_history }}{% endblock %}
+{% block content %}
+<link href="{{ url_for('static', filename='css/table-6.3.9.css') }}" rel="stylesheet" type="text/css">
+<script type="text/javascript" charset="utf8" src="/static/js/dataTables.min.js"></script>
+<style>
+@media (max-width: 1280px) {
+	.div-pannel {
+		height: 430px !important;
+	}
+}
+</style>
+<script>
+    $(document).ready(function() {
+        $('#scan_history').on( 'page.dt' )
+            .DataTable( {
+                "order": [[ "4", "desc" ]],
+                "pageLength": 25,
+                "columnDefs": [
+                    {
+                        "searchable": false,
+                        "orderable": false,
+                    }
+                ],
+                "lengthMenu": [[10, 25, 50, -1], [10, 25, 50, "All"]]
+            } );
+    } );
+</script>
+{% if user_subscription['user_status'] == 0 %}
+	{% include 'include/no_sub.html' %}
+{% else %}
+<table class="overview hover order-column display compact" id="scan_history">
+    <thead>
+        <tr class="overviewHead">
+            <th class="padding10" style="width: 10%; padding-left: 10px;">{{lang.words.status|title()}}</th>
+            <th>{{lang.words.host|title()}}</th>
+            <th>{{lang.words.port|title()}}</th>
+            <th>{{lang.phrases.possible_service_name}}</th>
+            <th>{{lang.words.date|title()}}</th>
+            <th>{{lang.words.time|title()}}</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% if history != '' %}
+    {% for t in history %}
+    {% set date_time = t.date|string %}
+    <tr>
+        <td class="padding10" style="width: 10%; padding: 7px 7px 7px 10px;">
+            {% if t.status == 'opened' %}
+                {% set color = '#5ad05a' %}
+            {% else %}
+                {% set color = '#be2424' %}
+            {% endif %}
+            <span style="color: {{color}};"><b>{{t.status |upper}}</b></span>
+        </td>
+        <td>{{t.serv}}</td>
+        <td>{{t.port}}</td>
+        <td>{{t.service_name}}</td>
+        <td>{{date_time.split(' ')[0]}}
+        </td>
+        <td>{{date_time.split(' ')[1]}}</td>
+    </tr>
+    {% endfor %}
+    {% else %}
+    <span class="alert alert-warning" style="margin-bottom: 0px;">Table is empty</span>
+    {% endif %}
+    </tbody>
+</table>
+{% endif %}
+{% endblock %}

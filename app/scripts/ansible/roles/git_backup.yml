@@ -1,0 +1,90 @@
+- hosts: all
+  become: yes
+  become_method: sudo
+  gather_facts: no
+  tasks:
+    - name: Check if .git exists
+      stat:
+        path: "{{ CONFIG_DIR }}/.git"
+      register: register_name
+
+    - name: Fail if has been installed
+      fail:
+        msg="Git configuration not found. Initialize git at the beginning"
+      when: not register_name.stat.exists and not INIT and not DELJOB
+
+    - name: Install git
+      package:
+        name: git
+        state: present
+      environment:
+        http_proxy: "{{PROXY}}"
+        https_proxy: "{{PROXY}}"
+      when: INIT
+
+    - name: Create home dir
+      file:
+        path: '/home/{{ ansible_user }}/.ssh'
+        state: directory
+        mode: 0700
+        group: '{{ ansible_user }}'
+        owner: '{{ ansible_user }}'
+      when: INIT
+
+    - name: Copy ssh file
+      copy:
+        src: '{{ KEY }}'
+        dest: '/home/{{ ansible_user }}/.ssh/git_{{ SERVICE }}_key'
+        mode: 0600
+        group: '{{ ansible_user }}'
+        owner: '{{ ansible_user }}'
+        force: yes
+      when: INIT
+
+    - name: Add write permissions
+      shell: "chmod o+wr -R {{ CONFIG_DIR }}"
+      when: not DELJOB
+
+    - name: Git init
+      shell: 'cd {{ CONFIG_DIR }} && git init'
+      when: INIT
+      become: no
+
+    - name: Git configure
+      blockinfile:
+        path: "{{ CONFIG_DIR }}/.git/config"
+        block: |
+          [user]
+          	name = Roxy-WI
+          	email = roxy-wi@.com
+      when: INIT
+
+    - name: Add dir exception
+      shell: 'git config --global --add safe.directory {{ CONFIG_DIR }}'
+      when: INIT
+      become: no
+
+    - name: Git add remote
+      shell: 'cd {{ CONFIG_DIR }} && git add --all . && git commit -m "Roxy-WI init repo" && git branch -M {{ BRANCH }} && git remote add origin {{ REPO }}'
+      when: INIT
+      become: no
+
+    - name: Git add push
+      shell: 'cd {{ CONFIG_DIR }} && GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no -i /home/{{ ansible_user }}/.ssh/git_{{ SERVICE }}_key" git push -u origin {{ BRANCH }}'
+      when: INIT
+      become: no
+
+    - name: Creates git job
+      cron:
+        name: "Git backup {{ SERVICE }} configs"
+        special_time: "{{ PERIOD }}"
+        job: 'cd {{ CONFIG_DIR }} && git add --all . && git commit -m "Roxy-WI backup job at $(date)" && git push --set-upstream origin {{ BRANCH }}'
+      when: not DELJOB
+      become: no
+
+    - name: Removes git backup job
+      cron:
+        name: "Git backup {{ SERVICE }} configs"
+        state: absent
+      when: DELJOB
+      become: no

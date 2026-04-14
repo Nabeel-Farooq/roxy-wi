@@ -1,0 +1,11 @@
+---
+- name: Obtain Lets Encrypt certificate
+  hosts: all
+  become: yes
+  become_method: sudo
+  gather_facts: yes
+  roles:
+    - role: letsencrypt
+      environment:
+        http_proxy: "{{PROXY}}"
+        https_proxy: "{{PROXY}}"

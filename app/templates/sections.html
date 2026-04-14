@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block title %}{{lang.words.edit|title()}} {{lang.words.section2}}{% endblock %}
+{% block h2 %}{{lang.words.edit|title()}} {{lang.words.section2}} {% endblock %}
+{% block content %}
+{% if is_serv_protected and g.user_params['role'] > 2 %}
+<meta http-equiv="refresh" content="0; url=/service/{{service}}">
+{% else %}
+<link rel="stylesheet" href="/static/js/codemirror/lib/codemirror.css">
+<link rel="stylesheet" href="/static/js/codemirror/addon/dialog/dialog.css">
+<link rel="stylesheet" href="/static/js/codemirror/addon/fold/foldgutter.css">
+<script src="/static/js/codemirror/lib/codemirror.js"></script>
+<script src="/static/js/codemirror/addon/search/search.js"></script>
+<script src="/static/js/codemirror/addon/search/searchcursor.js"></script>
+<script src="/static/js/codemirror/addon/search/jump-to-line.js"></script>
+<script src="/static/js/codemirror/addon/search/matchesonscrollbar.js"></script>
+<script src="/static/js/codemirror/addon/search/match-highlighter.js"></script>
+<script src="/static/js/codemirror/addon/dialog/dialog.js"></script>
+<script src="/static/js/codemirror/addon/edit/matchbrackets.js"></script>
+<script src="/static/js/codemirror/addon/edit/closebrackets.js"></script>
+<script src="/static/js/codemirror/addon/comment/comment.js"></script>
+<script src="/static/js/codemirror/addon/wrap/hardwrap.js"></script>
+<script src="/static/js/codemirror/addon/fold/foldcode.js"></script>
+<script src="/static/js/codemirror/addon/fold/foldgutter.js"></script>
+<script src="/static/js/codemirror/addon/fold/brace-fold.js"></script>
+<script src="/static/js/codemirror/addon/fold/comment-fold.js"></script>
+<script src="/static/js/codemirror/addon/scroll/annotatescrollbar.js"></script>
+<script src="/static/js/codemirror/mode/haproxy.js"></script>
+<script src="/static/js/codemirror/keymap/sublime.js"></script>
+<script src="/static/js/configshow.js"></script>
+<div class="left-space" style="margin-top: var(--indent);">
+	<select autofocus required name="section" id="section">
+		<option disabled>------</option>
+		{% for s in sections %}
+			{% if s == section %}
+			<option value="{{ s }}" selected>{{ s }}</option>
+			{% else %}
+			<option value="{{ s }}">{{ s }}</option>
+			{% endif %}
+		{% endfor %}
+	</select>
+	<input type="hidden" value="{{ serv }}" name="serv" id="serv">
+	{% if g.user_params['role'] <= 3 %}
+		<a class="ui-button ui-widget ui-corner-all" title="{{lang.words.edit|title()}} {{lang.words.running}} {{lang.words.config}}" onclick="openSection()">{{lang.words.edit|title()}}</a>
+	{% endif %}
+</div>
+	{% if config %}
+		{% if g.user_params['role'] <= 3 %}
+			<div id="config" class="left-space">
+				<h4>{{lang.phrases.you_are_editing}} "{{section}}" {{lang.phrases.section_from_server}} {{ serv }}</h4>
+				<form action="/config/section/haproxy/{{serv}}/save" name="saveconfig" id="saveconfig" method="post">
+					<input type="hidden" value="{{ serv }}" name="serv">
+					<input type="hidden" value="{{ start_line }}" name="start_line">
+					<input type="hidden" value="{{ end_line }}" name="end_line">
+					<input type="hidden" value="{{ cfg }}.old" name="oldconfig">
+					<input type="hidden" value="haproxy" name="service">
+					<div style="width: 95%;">
+						<textarea name="config" class="config" id="config_text_area" rows="35" cols="100" style="height: 40%">{{ config }}</textarea>
+					</div>
+					{% if not is_serv_protected or g.user_params['role'] <= 2 %}
+					<p>
+						<button type="submit" value="test" name="save" class="btn btn-default" title="{{lang.words.check|title()}} {{lang.words.config}} {{lang.words.without}} {{lang.words.saving}}">{{lang.phrases.check_config}}</button>
+						<button type="submit" value="save" name="save" class="btn btn-default" title="{{lang.phrases.save_title}}">{{lang.words.save|title()}}</button>
+						{% if is_restart|int == 0 %}
+						<button type="submit" value="restart" name="save" class="btn btn-default">{{lang.phrases.save_and_restart}}</button>
+						{% endif %}
+						<button type="submit" value="reload" name="save" class="btn btn-default">{{lang.phrases.save_and_reload}}</button>
+						{% if section != 'globals' and section != 'defaults' %}
+						<button type="submit" value="delete" name="save" class="btn btn-default">{{lang.words.delete|title()}} {{lang.words.this}} {{lang.words.section2}}</button>
+						{% endif %}
+					</p>
+					{% endif %}
+				</form>
+				<script>
+					var myCodeMirror = CodeMirror.fromTextArea(document.getElementById("config_text_area"),
+					{
+						mode: "haproxy",
+						lineNumbers: true,
+						lineWrapping: true,
+						autocapitalize: true,
+						autocorrect: true,
+						spellcheck: true,
+						autoCloseBrackets: true,
+						keyMap: "sublime",
+						matchBrackets: true,
+						foldGutter: true,
+						showCursorWhenSelecting: true,
+						gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter", "breakpoints"],
+						highlightSelectionMatches: {showToken: /\w/, annotateScrollbar: true}
+					});
+				</script>
+				<style>
+					.CodeMirror {
+						line-height: 1.2em;
+						height: 50%;
+					}
+				</style>
+				<script>
+					myCodeMirror.refresh();
+				</script>
+		{% endif %}
+	{% endif %}
+	</div>
+</div>
+{% endif %}
+{% endblock %}

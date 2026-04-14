@@ -1,0 +1,27 @@
+.padding20 {
+    width: 160px;
+}
+.validateTips {
+    margin: 0;
+}
+.fa-plus, .fa-edit, .fa-trash-alt {
+	width: 3px;
+	cursor: pointer;
+	margin-bottom: 3px;
+}
+.fa-plus {
+    margin-right: 3px;
+}
+.delete {
+    float: unset;
+    margin: 0;
+}
+.checks {
+    height: 100px;
+}
+.add-button-status-page {
+    margin-left: 20px;
+}
+.div-server-hapwi {
+    height: 135px;
+}

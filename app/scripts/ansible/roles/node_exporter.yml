@@ -1,0 +1,18 @@
+- hosts: all
+  become: yes
+  become_method: sudo
+  tasks:
+  - name: Open stat port for iptables
+    iptables:
+      chain: INPUT
+      destination_port: "9100"
+      jump: ACCEPT
+      protocol: tcp
+    ignore_errors: yes
+
+
+  roles:
+  - role: node_exporter
+    environment:
+      http_proxy: "{{PROXY}}"
+      https_proxy: "{{PROXY}}"

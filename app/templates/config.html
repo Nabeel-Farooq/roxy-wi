@@ -1,0 +1,445 @@
+{% extends "base.html" %}
+{% block title %}{{lang.menu_links.config.h2}} {{service_desc.service}}{% endblock %}
+{% block h2 %}{{lang.menu_links.config.h2}} {{service_desc.service}}{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="/static/js/codemirror/lib/codemirror.css">
+<link rel="stylesheet" href="/static/js/codemirror/addon/dialog/dialog.css">
+<link rel="stylesheet" href="/static/js/codemirror/addon/fold/foldgutter.css">
+<script src="/static/js/codemirror/lib/codemirror.js"></script>
+<script src="/static/js/codemirror/addon/search/search.js"></script>
+<script src="/static/js/codemirror/addon/search/searchcursor.js"></script>
+<script src="/static/js/codemirror/addon/search/jump-to-line.js"></script>
+<script src="/static/js/codemirror/addon/search/matchesonscrollbar.js"></script>
+<script src="/static/js/codemirror/addon/search/match-highlighter.js"></script>
+<script src="/static/js/codemirror/addon/dialog/dialog.js"></script>
+<script src="/static/js/codemirror/addon/edit/matchbrackets.js"></script>
+<script src="/static/js/codemirror/addon/edit/closebrackets.js"></script>
+<script src="/static/js/codemirror/addon/comment/comment.js"></script>
+<script src="/static/js/codemirror/addon/wrap/hardwrap.js"></script>
+<script src="/static/js/codemirror/addon/fold/foldcode.js"></script>
+<script src="/static/js/codemirror/addon/fold/foldgutter.js"></script>
+<script src="/static/js/codemirror/addon/fold/brace-fold.js"></script>
+<script src="/static/js/codemirror/addon/fold/comment-fold.js"></script>
+<script src="/static/js/codemirror/addon/scroll/annotatescrollbar.js"></script>
+<script src="/static/js/codemirror/mode/nginx.js"></script>
+<script src="/static/js/codemirror/mode/haproxy.js"></script>
+<script src="/static/js/codemirror/keymap/sublime.js"></script>
+<link rel="stylesheet" href="/static/js/diff2html/diff2html.min.css">
+<script src="/static/js/diff2html/diff2html.min.js"></script>
+<script src="/static/js/diff2html/diff2html-ui.min.js"></script>
+<script src="/static/js/configshow.js"></script>
+<script src="/static/js/add.js"></script>
+<script src="/static/js/add_nginx.js"></script>
+<script src="/static/js/edit_config.js"></script>
+
+{% if is_serv_protected and g.user_params['role'] > 2 %}
+<meta http-equiv="refresh" content="0; url=/service">
+{% else %}
+	{% if g.user_params['servers']|length == 0 %}
+		{% include 'include/getstarted.html' %}
+	{% else %}
+	<p>
+		<form action="{{ action }}" method="post" class="left-space">
+			<input type="hidden" id="service" value="{{service|default('haproxy', true)}}" />
+			{{ select('serv', values=g.user_params['servers'], is_servers='true', selected=serv) }}
+			{% if service == 'nginx' or service == 'apache' %}
+			<a class="ui-button ui-widget ui-corner-all" title="{{lang.words.show|title()}} {{lang.words.running}} {{lang.words.config}}" onclick="showConfigFiles()">{{lang.words.open|title()}}</a>
+			{% else %}
+			<a class="ui-button ui-widget ui-corner-all" title="{{lang.words.show|title()}} {{lang.words.running}} {{lang.words.config}}" onclick="showConfig()">{{lang.words.open|title()}}</a>
+			{% endif %}
+			{% if service != 'keepalived' and service != 'apache' %}
+				<a class="ui-button ui-widget ui-corner-all" title="{{lang.words.view|title()}} {{lang.words.stat}}" onclick="openStats()">{{lang.menu_links.stats.link}}</a>
+			{% endif %}
+			{% if service != 'keepalived' and service != 'nginx' and service != 'apache' %}
+				<a class="ui-button ui-widget ui-corner-all" title="{{lang.words.show|title()}} {{lang.words.map}}" onclick="showMap()">{{lang.words.map|title()}}</a>
+			{% endif %}
+				<a class="ui-button ui-widget ui-corner-all" title="{{lang.words.compare|title()}} {{lang.words.configs}}" onclick="showCompareConfigs()">{{lang.words.compare|title()}}</a>
+			{% if g.user_params['role'] <= 3 %}
+				<a class="ui-button ui-widget ui-corner-all" title="{{lang.words.show|title()}} {{lang.words.versions}}" onclick="openVersions()">{{lang.menu_links.versions.link}}</a>
+			{% endif %}
+			{% if g.user_params['role'] <= 2 %}
+				<a href="/admin#backup" class="ui-button ui-widget ui-corner-all" title="Git">Git</a>
+			{% endif %}
+		</form>
+	<div id="ajax-config_file_name"></div>
+	{% endif %}
+
+	{% if stderr or error %}
+		{% include 'include/errors.html' %}
+	{% endif %}
+
+	{% if config %}
+		{% if g.user_params['role'] <= 3 %}
+			<h4 class="left-space">{{lang.words.config|title()}} {% if config_file_name and config_file_name != 'undefined' %}{{config_file_name.replace('92', '/')}}{%endif%} {{lang.words.from}} {{ serv }}</h4>
+			<form action="/config/{{service}}/{{serv}}" name="saveconfig" id="saveconfig" method="post" class="left-space">
+				<input type="hidden" value="{{ cfg }}.old" name="config_local_path">
+				<input type="hidden" value="{{ service }}" name="service">
+				<input type="hidden" value="{{ config_file_name }}" name="file_path">
+				<div>
+					<textarea name="config" id="config_text_area" class="config" rows="35" cols="100">{{ config }}</textarea>
+				</div>
+				<p>
+					<a href="/config/{{service}}/{{serv}}/show" class="ui-button ui-widget ui-corner-all" title="{{lang.phrases.return_to_config}}">{{lang.words.back|title()}}</a>
+					<button type="submit" value="test" name="save" class="btn btn-default" title="{{lang.words.check|title()}} {{lang.words.config}} {{lang.words.without}} {{lang.words.saving}}">{{lang.phrases.check_config}}</button>
+					<button type="submit" value="save" name="save" class="btn btn-default" title="{{lang.phrases.save_title}}">{{lang.words.save|title()}}</button>
+					{% if is_restart|int == 0 %}
+					<button type="submit" value="restart" name="" class="btn btn-default">{{lang.phrases.save_and_restart}}</button>
+					{% endif %}
+					<button type="submit" value="reload" name="save" class="btn btn-default">{{lang.phrases.save_and_reload}}</button>
+					{% if service != 'keepalived' %}
+					<div class="alert alert-info" style="margin-left: -0px;"><b>{{lang.words.note|title()}}:</b> {{lang.phrases.master_slave}}</div>
+                    <div class="alert alert-info" style="margin-left: -0px;">Read more about <a href="https://roxy-wi.org/description/hotkeys" target="_blank">Hotkeys</a></div>
+					{% endif %}
+				</p>
+			</form>
+		{% endif %}
+	{% endif %}
+<script>
+	var cur_url = window.location.href.split('/');
+	if (cur_url[4] === 'map') {
+		showMap();
+	}
+	if (cur_url[4] === 'compare') {
+		showCompareConfigs();
+	}
+	if (cur_url[6] === 'show') {
+        if (cur_url[4] === 'nginx') {
+            showConfigFiles(false, cur_url[7]);
+        }
+		showConfig();
+	}
+	if (cur_url[6] === 'show-files') {
+		showConfigFiles();
+	}
+	if (cur_url[6] === 'findInConfig') {
+		let words = findGetParameter('findInConfig');
+		waitForElm('#finding_words_from').then((elm) => {
+			$('#find_p').show();
+			$('#words').val(words);
+			findInConfig(words);
+		});
+	}
+	if (cur_url[4] === 'config_file_name') {
+		showConfigFilesForEditing();
+	}
+	if (cur_url[4] === 'haproxy' && cur_url[6] === 'edit') {
+		var myCodeMirror = CodeMirror.fromTextArea(document.getElementById("config_text_area"),
+            {
+                mode: "haproxy",
+                lineNumbers: true,
+                lineWrapping: true,
+                autocapitalize: true,
+                autocorrect: true,
+                spellcheck: true,
+                autoCloseBrackets: true,
+                keyMap: "sublime",
+                matchBrackets: true,
+                foldGutter: true,
+                showCursorWhenSelecting: true,
+                gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter", "breakpoints"],
+                highlightSelectionMatches: {showToken: /\w/, annotateScrollbar: true}
+            });
+	} else if (cur_url[6] === 'edit') {
+		var myCodeMirror = CodeMirror.fromTextArea(document.getElementById("config_text_area"),
+				{
+					mode: "nginx",
+					lineNumbers: true,
+					lineWrapping: true,
+					autocapitalize: true,
+					autocorrect: true,
+					spellcheck: true,
+					autoCloseBrackets: true,
+					keyMap: "sublime",
+					matchBrackets: true,
+					foldGutter: true,
+					showCursorWhenSelecting: true,
+    				gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter", "breakpoints"],
+					highlightSelectionMatches: {showToken: /\w/, annotateScrollbar: true}
+				});
+	}
+    if (cur_url[6] === 'edit') {
+        myCodeMirror.on("gutterClick", function (cm, n) {
+            let info = cm.lineInfo(n);
+            cm.setGutterMarker(n, "breakpoints", info.gutterMarkers ? null : makeMarker());
+        });
+        myCodeMirror.on("beforeChange", function (cm, change) {
+            $(window).bind('beforeunload', function () {
+                return 'Are you sure you want to leave?';
+            });
+        });
+    }
+	function makeMarker() {
+		var marker = document.createElement("div");
+		marker.style.color = "#822";
+		marker.innerHTML = "●";
+		return marker;
+	}
+</script>
+<style>
+.CodeMirror {
+  	line-height: 1.2em;
+  	height: 70%;
+}
+</style>
+<script>
+    if (cur_url[6] === 'edit') {
+        myCodeMirror.refresh();
+    }
+	$(document).bind('keydown', 'ctrl+s', function (){
+		$("[type='submit'][value='save']").click();
+	});
+	$(document).bind('keydown', 'ctrl+d', function (){
+		$("[type='submit'][value='test']").click();
+	});
+	$(document).bind('keydown', 'ctrl+e', function (){
+		$("[type='submit'][value='reload']").click();
+	});
+	{% if is_restart|int == 0 %}
+	$(document).bind('keydown', 'ctrl+r', function (){
+		$("[type='submit'][value='restart']").click();
+	});
+	{% endif %}
+</script>
+{% if user_subscription.user_status != 0 %}
+    <script>
+function explainSelected(mode) {
+    const selectedText = myCodeMirror.getSelection();
+    const from = myCodeMirror.getCursor("from");
+    const to = myCodeMirror.getCursor("to");
+
+    if (!selectedText.trim()) {
+        alert("{{ lang.phrases.select_part }}");
+        return;
+    }
+
+    let prompt = "";
+    let previewMode = "replace"; // default
+
+    if (mode === "explain") {
+        prompt = `{{ lang.phrases.explain_config }} {{ service }}. {{ lang.phrases.just_explain }}`;
+        previewMode = "explanation"; // не заменяем текст
+    } else if (mode === "optimize") {
+        prompt = `{{ lang.phrases.optimize_config }}`;
+    } else if (mode === "commented") {
+        prompt = `{{ lang.phrases.comment_config }}`;
+    } else if (mode === "syntax") {
+        prompt = `{{ lang.phrases.syntax_config }}`;
+    }
+    NProgress.start();
+    fetch("/api/gpt", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            prompt: `${prompt}\n\n${selectedText}`
+        })
+    })
+        .then(response => response.text().then(text => {
+
+            if (!response.ok) {
+                // Пробуем получить error из JSON, если он там есть
+                let message = text;
+                try {
+                    const json = JSON.parse(text);
+                    if (json.error) {
+                        message = json.error;
+                    }
+                } catch (_) {
+                    // Тело не JSON — оставим как есть
+                }
+
+                NProgress.done();
+                return alert(`Ошибка API (${response.status}):\n\n${message}`);
+            }
+            let data;
+            try {
+                data = JSON.parse(text);
+            } catch (e) {
+                NProgress.done();
+                alert("{{ lang.phrases.error_parsing }}");
+                return;
+            }
+            let result = typeof data.response === "string" ? data.response.trim() : "";
+            if (!result) {
+                NProgress.done();
+                return alert("{{ lang.phrases.empty_ans }}");
+            }
+
+            result = result.replace(/^```(?:[a-zA-Z]+)?\s*/gm, "");
+            result = result.replace(/```$/gm, "");
+
+            if (previewMode === "explanation" || previewMode === "syntax") {
+                showExplanation(result);
+            } else {
+                showPreview(selectedText, result, from, to);
+            }
+            NProgress.done();
+        }))
+        .catch(err => {
+            NProgress.done();
+            alert("Error: " + err.message);
+            console.error(err);
+        });
+}
+
+
+let previewOld = null;
+let previewNew = null;
+let previewFrom = null;
+let previewTo = null;
+
+function showExplanation(text) {
+  const container = document.getElementById("previewContent");
+  container.innerHTML = `<pre style="white-space:pre-wrap;">${text}</pre>`;
+
+  document.getElementById("applyButton").style.display = "none";
+  document.getElementById("previewModal").style.display = "block";
+}
+function showPreview(oldCode, newCode, from, to) {
+    previewOld = oldCode;
+    previewNew = newCode;
+    previewFrom = from;
+    previewTo = to;
+
+    const diffString = createUnifiedDiff(oldCode, newCode);
+    const container = document.getElementById("previewContent");
+
+    // Очищаем старое содержимое
+    container.innerHTML = "";
+
+    const diffUi = new Diff2HtmlUI(container, diffString, {
+        drawFileList: false,
+        matching: 'lines',
+        outputFormat: 'side-by-side'
+    });
+
+    diffUi.draw();
+    diffUi.highlightCode();
+
+    document.getElementById("previewModal").style.display = "block";
+    document.getElementById("applyButton").style.display = "inline-block";
+}
+
+function closePreview() {
+    document.getElementById("previewModal").style.display = "none";
+    document.querySelector("#previewModal button").disabled = false;
+
+    previewOld = previewNew = previewFrom = previewTo = null;
+}
+
+function applyPreview() {
+    if (previewNew && previewFrom && previewTo) {
+        myCodeMirror.replaceRange(previewNew.trim(), previewFrom, previewTo);
+    }
+    closePreview();
+}
+
+function createUnifiedDiff(oldText, newText) {
+    const oldLines = oldText.trim().split("\n");
+    const newLines = newText.trim().split("\n");
+    const fileName = "config.conf";
+    const header = `diff --git a/${fileName} b/${fileName}\n--- a/${fileName}\n+++ b/${fileName}\n`;
+    const diffLines = [header];
+
+    const maxLines = Math.max(oldLines.length, newLines.length);
+    for (let i = 0; i < maxLines; i++) {
+        const oldLine = oldLines[i] || "";
+        const newLine = newLines[i] || "";
+
+        if (oldLine === newLine) {
+            diffLines.push(" " + oldLine);
+        } else {
+            if (oldLine) diffLines.push("-" + oldLine);
+            if (newLine) diffLines.push("+" + newLine);
+        }
+    }
+
+    return diffLines.join("\n");
+}
+function doClipboardAction(action) {
+  const text = myCodeMirror.getSelection();
+  if (!text && action !== "paste") return;
+
+  navigator.clipboard[action === "paste" ? "readText" : "writeText"](
+    action === "paste" ? undefined : text
+  ).then(result => {
+    if (action === "cut") {
+      myCodeMirror.replaceSelection("");
+    } else if (action === "paste") {
+      myCodeMirror.replaceSelection(result);
+    }
+    hideCustomMenu();
+  }).catch(err => {
+    alert("Clipboard error: " + err.message);
+    console.error(err);
+  });
+}
+
+function handleContextAction(mode) {
+  hideCustomMenu();
+  explainSelected(mode);
+}
+
+function hideCustomMenu() {
+  document.getElementById("customContextMenu").style.display = "none";
+}
+
+document.addEventListener("contextmenu", function (e) {
+  const isInCodeMirror = e.target.closest(".CodeMirror");
+  if (!isInCodeMirror) return;
+
+  e.preventDefault(); // блокируем стандартное меню
+
+  const menu = document.getElementById("customContextMenu");
+  menu.style.left = `${e.pageX + 8}px`;
+  menu.style.top = `${e.pageY}px`;
+  menu.style.display = "block";
+
+  setTimeout(() => {
+    document.addEventListener("click", hideCustomMenu, { once: true });
+  }, 1);
+});
+
+</script>
+    <style>
+  .context-item {
+    padding: 6px 12px;
+    cursor: pointer;
+  }
+
+  .context-item:hover {
+    background-color: #f0f0f0;
+  }
+</style>
+    <div id="customContextMenu" style="
+  display: none;
+  position: absolute;
+  background: #fff;
+  border: 1px solid #ccc;
+  z-index: 10000;
+  padding: 5px;
+  font-family: sans-serif;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+  min-width: 180px;
+  border-radius: 6px;
+">
+        <div class="context-item" onclick="doClipboardAction('cut')">✂️ {{ lang.words.w_cut|title() }}</div>
+        <div class="context-item" onclick="doClipboardAction('copy')">📋 {{ lang.words.w_copy|title() }}</div>
+        <div class="context-item" onclick="doClipboardAction('paste')">📥 {{ lang.words.w_paste|title() }}</div>
+        <hr>
+        <div class="context-item" onclick="handleContextAction('explain')">💬 {{ lang.phrases.explain_selection }}</div>
+        <div class="context-item" onclick="handleContextAction('optimize')">⚙️ {{ lang.phrases.optimize_selection }}</div>
+        <div class="context-item" onclick="handleContextAction('commented')">📝 {{ lang.phrases.enter_comment }}</div>
+        <div class="context-item" onclick="handleContextAction('syntax')">✅ {{ lang.phrases.check_syntax }}</div>
+    </div>
+    {% endif %}
+{% endif %}
+<div id="previewModal" style="display:none; position:fixed; top:10%; left:50%; transform:translateX(-50%);
+  background:white; border:1px solid #ccc; padding:20px; z-index:9999; width:80%; max-height:80%; overflow:auto; box-shadow:0 4px 20px rgba(0,0,0,0.3);">
+    <h3>{{ lang.phrases.preview_change }}</h3>
+    <div id="previewContent"></div>
+    <div id="previewButtons" style="text-align:right; margin-top:10px;">
+        <button id="applyButton" onclick="applyPreview()">{{ lang.words.apply|title() }}</button>
+        <button onclick="closePreview()">{{ lang.words.cancel|title() }}</button>
+    </div>
+</div>
+{% endblock %}

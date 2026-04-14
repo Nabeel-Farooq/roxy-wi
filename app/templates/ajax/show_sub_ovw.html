@@ -1,0 +1,50 @@
+{% import 'languages/'+lang|default('en')+'.html' as lang %}
+    {% if sub.Plan == 'user' %}
+        {% set plan = 'Home' %}
+    {% elif sub.Plan == 'company' %}
+        {% set plan = 'Enterprise' %}
+    {% elif sub.Plan == 'cloud' %}
+        {% set plan = 'Cloud' %}
+    {% elif sub.Plan == 'support' %}
+        {% set plan = 'Premium' %}
+    {% elif sub.Plan == 'Trial' %}
+        {% set plan = 'Trial' %}
+    {% else %}
+        {% set plan = 'Free' %}
+    {% endif %}
+    <tr class="odd">
+        <td class="padding10 first-collumn-wi">{{lang.words.plan|title()}}</td>
+        <td colspan="2">{{plan}}</td>
+    </tr>
+    <tr class="even">
+        <td class="padding10 first-collumn-wi">{{lang.words.status|title()}}</td>
+        <td colspan="2">
+            {% if plan == 'Free' %}
+                N/A
+            {% else %}
+            <span
+            {% if sub.Status|int() == 1 %}
+                style="color: var(--green-color); font-weight: bold">{{lang.words.active|title()}}
+            {% else %}
+                style="color: var(--red-color); font-weight: bold">Blocked
+             {% endif %}
+            </span>
+            {% endif %}
+        </td>
+    </tr>
+    <tr class="odd">
+        <td class="padding10 first-collumn-wi">{{lang.words.pay_method|title()}}</td>
+        <td colspan="2">
+            {% if plan == 'Free' %}
+                N/A
+            {% else %}
+                {% if sub.Method == 'Boosty' %}
+                    <a href="https://boosty.to/roxy-wi" title="Boosty.to" class="logs_link" target="_blank">Boosty</a>
+                {% elif sub.Method == 'Patreon' %}
+                    <a href="https://www.patreon.com/roxy_wi" title="Patreon.con" class="logs_link" target="_blank">Patreon</a>
+                {% else %}
+                    {{sub.Method}}
+                {% endif %}
+            {% endif %}
+        </td>
+    </tr>

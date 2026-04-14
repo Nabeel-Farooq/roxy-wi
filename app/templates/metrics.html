@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% from 'include/input_macros.html' import checkbox %}
+{% block title %}{{lang.menu_links.metrics.h2}} {{service_desc.service}}{% endblock %}
+{% block h2 %}{{lang.menu_links.metrics.h2}} {{service_desc.service}}{% endblock %}
+{% block content %}
+<style>
+	table, th, tr, td {
+		border: 1px solid #ddd;
+		align: center;
+		text-align: center;
+	}
+	th, tr, td {
+		width: 6%;
+		min-width: 3%;
+		padding: 10px;
+	}
+</style>
+<link href="{{ url_for('static', filename='css/chart.min.css') }}" rel="stylesheet">
+<script src="/static/js/metrics.js"></script>
+<script src="/static/js/chart.min-4.3.0.js"></script>
+<input type="hidden" id="service" value="{{service}}">
+{% if user_subscription['user_status'] == 0 %}
+	{% include 'include/no_sub.html' %}
+{% elif services == '0' %}
+<div style="text-align: center;">
+	<br />
+	<h3>{{lang.phrases.metrics_not_installed}}</h3>
+	<img src="{{ url_for('static', filename='images/no_servers.png')}}" alt="There is no server">
+	<h4>{{lang.words.read|title()}} <a href="https://roxy-wi.org/services/metrics#installation" title="Metrics {{lang.words.installation}}" style="color: #5d9ceb;" target="_blank">{{lang.words.here}}</a>
+	{{lang.phrases.how_to_install_metrics}}</h4>
+</div>
+{% else %}
+{% if servers|length == 0 %}
+	{% include 'include/getstarted.html' %}
+{% else %}
+	<table style="min-width: 40%;">
+		<tr class="overviewHead">
+			<th colspan=13 style="background-color: #d1ecf1">
+				<span id="table_metrics_head" style="position: absolute;margin-left: 43%;">{{lang.words.metrics|title()}}</span>
+				<span id="en_table_metric" class="plus switcher_table_metric" title="{{lang.phrases.enable_avg_table}}"></span>
+				<span id="dis_table_metric" class="minus switcher_table_metric" title="{{lang.phrases.disable}}"></span>
+			</th>
+		</tr>
+	</table>
+	<div id="table_metrics"></div>
+	<div class="metrics-time-range">
+		<b>{{lang.words.time_range}}:</b>
+		<select title="Choose time range" id="time-range">
+			<option value="30">30 {{lang.words.minutes}}</option>
+			<option value="60">1 {{lang.words.hour}}</option>
+			<option value="180">3 {{lang.words.hours}}</option>
+			<option value="360">6 {{lang.words.hours2}}</option>
+			<option value="720">12 {{lang.words.hours2}}</option>
+		</select>
+	</div>
+	{% if service == 'haproxy' %}
+	<div style="margin-top: var(--indent);">
+		{{ checkbox('hide_http_metrics', desc=lang.words.hide|title()+' HTTP ' + lang.words.metrics, title=lang.words.hide|title()+' HTTP ' + lang.words.metrics) }}
+	</div>
+	{% endif %}
+	<div style="clear: both;"></div>
+{% for s in servers %}
+	{% if service == 'haproxy' %}
+	<div class="chart-container">
+		<canvas id="{{s.ip}}" role="img"></canvas>
+	</div>
+	<div class="chart-container http_metrics_div" style="display: none">
+		<canvas id="http_{{s.ip}}" role="img"></canvas>
+	</div>
+	{% elif service == 'apache' %}
+	<div class="chart-container">
+		<canvas id="apache_{{s.ip}}" role="img"></canvas>
+	</div>
+	{% else %}
+	<div class="chart-container">
+		<canvas id="nginx_{{s.ip}}" role="img"></canvas>
+	</div>
+	{% endif %}
+{% endfor %}
+<script>
+	function showMetrics() {
+		let metrics = new Promise(
+			(resolve, reject) => {
+				removeData();
+				{% for s in servers %}
+					{% if service == 'haproxy' %}
+						getChartData('{{s.ip}}')
+						getHttpChartData('{{s.ip}}')
+					{% elif service == 'apache' %}
+						getApacheChartData('{{s.ip}}')
+					{% else %}
+						getNginxChartData('{{s.ip}}')
+					{% endif %}
+				{% endfor %}
+				if (localStorage.getItem('table_metrics') == 0 || localStorage.getItem('table_metrics') === null) {
+					$('#dis_table_metric').css('display', 'none');
+				} else {
+					$('#en_table_metric').css('display', 'none');
+					loadMetrics();
+				}
+			});
+		metrics.then();
+	}
+	showMetrics()
+	$( function() {
+		$("#time-range").on('selectmenuchange', function () {
+			removeData()
+			let metrics = new Promise(
+					(resolve, reject) => {
+						{% for s in servers %}
+							{% if service == 'haproxy' %}
+								getChartData('{{s.ip}}')
+								getHttpChartData('{{s.ip}}')
+							{% elif service == 'apache' %}
+								getApacheChartData('{{s.ip}}')
+							{% else %}
+								getNginxChartData('{{s.ip}}')
+							{% endif %}
+						{% endfor %}
+					});
+			metrics.then();
+		});
+	});
+ </script>
+{% endif %}
+{% endif %}
+{% endblock %}

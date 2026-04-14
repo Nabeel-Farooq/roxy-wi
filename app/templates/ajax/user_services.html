@@ -1,0 +1,27 @@
+{% import 'languages/'+lang|default('en')+'.html' as lang %}
+<table id="all_services" style="width: 300px;float: left;margin-right: 50px;">
+    <caption class="user_group_caption">{{lang.words.all|title()}} {{lang.words.services}}</caption>
+    <tbody>
+    {% for service in services %}
+	{% if service.service_id|string() not in user_services %}
+    <tr class="{{ loop.cycle('odd', 'even') }}" id="add_service-{{service.service_id}}" data-service_name="{{service.service}}">
+        <td class="padding20" style="width: 100%">{{service.service}}</td>
+        <td><span class="add_user_group" title="{{lang.words.add|title()}} {{lang.words.service}}" onclick="addServiceToUser({{service.service_id}})">+</span></td>
+    </tr>
+    {% endif %}
+    {% endfor %}
+    </tbody>
+</table>
+<table id="checked_services" style="width: 300px;">
+    <caption class="user_group_caption">{{lang.words.user3|title()}} {{lang.words.services}}</caption>
+    <tbody>
+    {% for service in services %}
+	{% if service.service_id|string() in user_services %}
+    <tr class="{{ loop.cycle('odd', 'even') }}" id="remove_service-{{service.service_id}}" data-service_name="{{service.service}}">
+        <td class="padding20" style="width: 100%;">{{service.service|title()}}</td>
+        <td><span class="remove_user_group" onclick="removeServiceFromUser({{service.service_id}})" title="{{lang.words.delete|title()}} {{lang.words.service}}">-</span></td>
+    </tr>
+	{% endif %}
+    {% endfor %}
+    </tbody>
+</table>
