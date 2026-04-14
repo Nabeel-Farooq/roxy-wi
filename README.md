@@ -1,9 +1,6 @@
 # ![alt text](https://roxy-wi.org/static/images/logo_menu.png "Logo")
 Web interface (user-friendly web GUI, alerting, monitoring, and secure) for managing HAProxy, Nginx, and Keepalived servers. Leave your [feedback](https://github.com/hap-wi/roxy-wi/issues)
 
-# Get involved
-* [Telegram Channel](https://t.me/roxy_wi_channel) about Roxy-WI, talks and questions are welcome
-
 # Demo site
 [Demo site](https://demo.roxy-wi.org) Login/password: admin/admin. Server resets every hour.
 
