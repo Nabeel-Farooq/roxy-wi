@@ -1,6 +1,7 @@
 import os
 import shutil
 import datetime
+from contextlib import suppress
 
 from app import scheduler
 import app.modules.db.sql as sql
@@ -14,18 +15,22 @@ import app.modules.roxy_wi_tools as roxy_wi_tools
 get_config = roxy_wi_tools.GetConfigVar()
 
 
+def _get_app_context():
+    app = scheduler.app
+    return app.app_context()
+
+
 @scheduler.task('interval', id='update_plan', minutes=55, misfire_grace_time=None)
 def update_user_status():
-    app = scheduler.app
-    with app.app_context():
+    with _get_app_context():
         roxy.update_plan()
 
 
 @scheduler.task('interval', id='check_new_version', days=1, misfire_grace_time=None)
 def check_new_version():
-    app = scheduler.app
-    with app.app_context():
+    with _get_app_context():
         tools = roxy_sql.get_roxy_tools()
+
         for tool in tools:
             ver = roxy.check_new_version(tool)
             roxy_sql.update_tool_new_version(tool, ver)
@@ -33,32 +38,42 @@ def check_new_version():
 
 @scheduler.task('interval', id='update_cur_tool_versions', days=1, misfire_grace_time=None)
 def update_cur_tool_versions():
-    app = scheduler.app
-    with app.app_context():
+    with _get_app_context():
         tools_common.update_cur_tool_versions()
 
 
 @scheduler.task('interval', id='delete_action_history_for_period', minutes=70, misfire_grace_time=None)
 def delete_action_history_for_period():
-    app = scheduler.app
-    with app.app_context():
+    with _get_app_context():
         history_sql.delete_action_history_for_period()
 
 
 @scheduler.task('interval', id='delete_old_logs', hours=1, misfire_grace_time=None)
 def delete_old_logs():
-    app = scheduler.app
-    with app.app_context():
+    with _get_app_context():
         time_storage = sql.get_setting('log_time_storage')
         log_path = get_config.get_config_var('main', 'log_path')
+
         try:
-            time_storage_hours = time_storage * 24
-            for dirpath, dirnames, filenames in os.walk(log_path):
+            time_storage_hours = int(time_storage) * 24
+            current_time = datetime.datetime.now()
+            max_age = datetime.timedelta(hours=time_storage_hours)
+
+            for dirpath, _, filenames in os.walk(log_path):
                 for file in filenames:
                     curpath = os.path.join(dirpath, file)
-                    file_modified = datetime.datetime.fromtimestamp(os.path.getmtime(curpath))
-                    if datetime.datetime.now() - file_modified > datetime.timedelta(hours=time_storage_hours):
-                        os.remove(curpath)
+
+                    if not os.path.isfile(curpath):
+                        continue
+
+                    file_modified = datetime.datetime.fromtimestamp(
+                        os.path.getmtime(curpath)
+                    )
+
+                    if current_time - file_modified > max_age:
+                        with suppress(FileNotFoundError):
+                            os.remove(curpath)
+
         except Exception as e:
             print(f'error: cannot delete old log files: {e}')
 
@@ -66,21 +81,25 @@ def delete_old_logs():
 @scheduler.task('interval', id='update_owner_on_log', hours=12, misfire_grace_time=None)
 def update_owner_on_log():
     log_path = get_config.get_config_var('main', 'log_path')
-    try:
+
+    with suppress(Exception):
         common.set_correct_owner(log_path)
-    except Exception:
-        pass
 
 
 @scheduler.task('interval', id='delete_ansible_artifacts', hours=24, misfire_grace_time=None)
 def delete_ansible_artifacts():
     full_path = get_config.get_config_var('main', 'fullpath')
-    ansible_path = f'{full_path}/app/scripts/ansible'
+    ansible_path = os.path.join(full_path, 'app', 'scripts', 'ansible')
+
     folders = ['artifacts', 'env']
 
     for folder in folders:
-        if os.path.isdir(f'{ansible_path}/{folder}'):
+        folder_path = os.path.join(ansible_path, folder)
+
+        if os.path.isdir(folder_path):
             try:
-                shutil.rmtree(f'{ansible_path}/{folder}')
+                shutil.rmtree(folder_path)
             except Exception as e:
-                raise Exception(f'error: Cron cannot delete ansible folders: {e}')
+                raise Exception(
+                    f'error: Cron cannot delete ansible folders: {e}'
+                ) from e
